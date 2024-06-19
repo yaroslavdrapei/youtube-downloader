@@ -12,7 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "yards": "^0.1.4",
+    "downloads-folder": "^3.0.3",
+    "ffmpeg-static": "^5.2.0",
+    "inquirer": "^8.0.0",
+    "sanitize-filename": "^1.6.3",
+    "yargs": "^17.7.2",
     "ytdl-core": "^4.11.5"
   }
 }
