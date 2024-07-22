@@ -1,7 +1,7 @@
 const Downloader = require('./modules/Downloader')
 const getOptions = require('./modules/getOptions')
 const inquirer = require('inquirer')
-const ytdl = require('ytdl-core')
+const ytdl = require('@distube/ytdl-core')
 
 module.exports = async () => {
   const prompt = inquirer.createPromptModule()

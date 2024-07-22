@@ -1,4 +1,4 @@
-const ytdl = require('ytdl-core')
+const ytdl = require('@distube/ytdl-core')
 const mergeVideoAudio = require('./mergeVideoAudio')
 const { ProgressBarStream } = require('./progressBars')
 const sanitizeFilename = require('sanitize-filename')
