@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "backend": "node --watch backend/app",
+    "frontend": "node --watch frontend/index",
+    "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=28301312 --api-hash=1c203a536e7a14524d8a1fa0ccef189d --local"
   },
   "bin": {
     "youtube-downloader": "index.js"
@@ -12,11 +15,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@distube/@distube/ytdl-core": "^4.13.5",
-    "downloads-folder": "^3.0.3",
+    "@distube/ytdl-core": "^4.13.7",
     "ffmpeg-static": "^5.2.0",
-    "inquirer": "^8.0.0",
-    "sanitize-filename": "^1.6.3",
-    "yargs": "^17.7.2"
+    "node-telegram-bot-api": "^0.66.0",
+    "sanitize-filename": "^1.6.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "eslint": "^9.8.0",
+    "globals": "^15.8.0"
   }
 }
