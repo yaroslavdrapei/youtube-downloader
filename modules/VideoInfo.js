@@ -1,5 +1,5 @@
 const ytdl = require('@distube/ytdl-core');
-const { toMb } = require('../../shared/utils');
+const { toMb } = require('../utils/utils');
 
 class VideoInfo {
   #info;
@@ -102,7 +102,7 @@ class VideoInfo {
     const bestAudioFormat = ytdl.chooseFormat(this.#formats, { quality: 'highestaudio' });
 
     simplifiedFormats.push({
-      name: `${simplifiedFormats.length + 1}. Best quality audio; ${this.#getSizeInMb(bestAudioFormat)}`,
+      name: `${simplifiedFormats.length + 1} - Audio; ${this.#getSizeInMb(bestAudioFormat)}`,
       itag: bestAudioFormat.itag,
     });
 
@@ -110,7 +110,7 @@ class VideoInfo {
       const sizeInMb = this.#getSizeInMb(format);
 
       simplifiedFormats.push({
-        name: `${simplifiedFormats.length + 1}. ${format.qualityLabel} ${format.container}; ${sizeInMb}`,
+        name: `${simplifiedFormats.length + 1} - ${format.qualityLabel} ${format.container}; ${sizeInMb}`,
         itag: format.itag,
       });
     });

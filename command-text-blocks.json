@@ -1,0 +1,5 @@
+{
+  "welcome": "Welcome to Youtube Download Bot\nIt can download videos up to 2GB\nYou just need to send the link and choose the format\nFeel free to download music or videos in any format you like!",
+  "guide": "Quick guide how to use the bot:\n1) Send the link to the video\n2) Choose the quality. You'll be given a choice, just enter the number (for example, for audio it's always 1)\n3) Wait for video to download. If there are any error, the bot will let you now\n4) Enjoy the video)\n\nQuick tip: the bot can download a few videos at the same time\nTo do this you just need to send the link, choose quality and you don't need to wait for the videos to download!\nSend next link right away!\nIt'll work, and you'll ultimately get all the videos ",
+  "faq": "FAQ:\n1) What's that 'merging files' thing?\nSome video formats (usually > 360p) don't have built-in audio. It wouldn't be fun to watch soundless video, right?)\nSo along with the video the bot downloads its audio and then merges it together.\nIt requires some time, but its worth it - watching high-quality video with sound\nThat's basically it! If you have any suggestions or questions - DM me: @yaroslavtehdht"
+}

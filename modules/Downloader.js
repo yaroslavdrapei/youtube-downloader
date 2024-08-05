@@ -2,17 +2,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ytdl = require('@distube/ytdl-core');
 const sanitizeFilename = require('sanitize-filename');
-const { deleteFile } = require('../../shared/utils');
+const { deleteFile, generateRandomSeed } = require('../utils/utils');
 const Merger = require('./Merger');
 const ProgressBarStream = require('./ProgressBarStream');
 
 class Downloader {
-  constructor() {
+  constructor({ progressBarMessageCallback }) {
     this.storagePath = 'E:/youtube-bot-database';
     this.info = null;
+    this.progressBarMessageCallback = progressBarMessageCallback;
   }
 
-  async #basicDownload(itag, extension, prompt) {
+  async #basicDownload(itag, extension) {
     // need to choose from audioonly formats for music
     const formats = extension == '.mp3' ? ytdl.filterFormats(this.info.formats, 'audioonly') : this.info.formats;
     const format = ytdl.chooseFormat(formats, { quality: itag });
@@ -24,7 +25,8 @@ class Downloader {
     const returnedStream = ytdl.downloadFromInfo(this.info, { format: format });
 
     const streamErrorPromise = new Promise((resolve, reject) => {
-      const progressBar = new ProgressBarStream(returnedStream, 2000, prompt);
+      const progressBar = new ProgressBarStream(1000, 'Video', this.progressBarMessageCallback);
+      progressBar.start([returnedStream]);
 
       returnedStream.on('error', (err) => {
         progressBar.stop();
@@ -41,45 +43,65 @@ class Downloader {
     return filePath;
   }
 
-
   async #mergeDownload(itag) {
     const videoFormat = ytdl.chooseFormat(ytdl.filterFormats(this.info.formats, 'videoonly'), { quality: itag });
-    const audioFormat = ytdl.chooseFormat(ytdl.filterFormats(this.info.formats, 'audioonly'), { quality: 'lowestaudio' });
+    const audioFormat = ytdl.chooseFormat(ytdl.filterFormats(this.info.formats, 'audioonly'), {
+      quality: 'lowestaudio',
+    });
 
     const formats = [videoFormat, audioFormat];
+
+    const progressBar = new ProgressBarStream(1000, 'Video', this.progressBarMessageCallback);
+
+    const inputStreams = [];
     const streamErrorPromises = [];
+
+    const seed = generateRandomSeed(15);
 
     formats.forEach((format, i) => {
       const streamErrorPromise = new Promise((resolve, reject) => {
         const inputStream = ytdl.downloadFromInfo(this.info, { format });
-
-        const progressBar = new ProgressBarStream(inputStream, 2000, i == 0 ? 'Video' : 'Audio');
+        inputStreams.push(inputStream);
 
         inputStream.on('error', (err) => {
           console.log('Miniget error !');
           progressBar.stop();
           reject(err);
         });
-      
-        const outputStream = fs.createWriteStream(path.join(this.storagePath, i == 0 ? 'video.mp4' : 'audio.mp3'));
+
+        const outputStream = fs.createWriteStream(
+          path.join(
+            this.storagePath,
+            i == 0 ? `video${seed}.mp4` : `audio${seed}.mp3`
+          )
+        );
 
         outputStream.on('finish', resolve);
-  
+
         inputStream.pipe(outputStream);
       });
 
       streamErrorPromises.push(streamErrorPromise);
     });
 
+    progressBar.start(inputStreams, this.progressBarMessageCallback);
+
     // just waiting for files to finish downloading
     await Promise.all(streamErrorPromises);
-      
+
     const filePath = path.join(this.storagePath, this.videoTitle) + '.mp4';
 
-    await Merger.mergeVideoAudio(this.storagePath, this.videoTitle + '.mp4');
+    // await Merger.mergeVideoAudio(this.storagePath, this.videoTitle + '.mp4');
+    const merger = new Merger({ progressBarMessageCallback: this.progressBarMessageCallback });
+    await merger.mergeVideoAudio(
+      this.storagePath,
+      this.videoTitle + '.mp4',
+      `video${seed}.mp4`,
+      `audio${seed}.mp3`
+    );
 
-    deleteFile(path.join(this.storagePath, 'video.mp4'));
-    deleteFile(path.join(this.storagePath, 'audio.mp3'));
+    deleteFile(path.join(this.storagePath, `video${seed}.mp4`));
+    deleteFile(path.join(this.storagePath, `audio${seed}.mp3`));
 
     return filePath;
   }
@@ -95,15 +117,14 @@ class Downloader {
       if (hasVideo && !hasAudio) {
         pathToFile = await this.#mergeDownload(itag);
       } else if (hasVideo && hasAudio) {
-        pathToFile = await this.#basicDownload(itag, '.mp4', 'Video');
+        pathToFile = await this.#basicDownload(itag, '.mp4');
       } else {
         // (!hasVideo && hasAudio)
-        pathToFile = await this.#basicDownload(itag, '.mp3', 'Audio');
+        pathToFile = await this.#basicDownload(itag, '.mp3');
       }
-  
+
       return pathToFile;
     } catch (err) {
-      console.log('Download level!');
       return Promise.reject(err);
     }
   }

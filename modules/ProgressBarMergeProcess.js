@@ -1,18 +1,24 @@
 const ProgressBar = require('./ProgressBar');
-const { toMb } = require('../../shared/utils');
+const { toMb } = require('../utils/utils');
 
 class ProgressBarMergeProcess extends ProgressBar {
-  constructor(ffmpegProcess, indexOfProgressStream, frequency) {
-    super(frequency);
+  progressData = 0;
+  constructor(frequency, informUser) {
+    super(frequency, informUser);
+  }
+
+  start(ffmpegProcess, indexOfProgressStream) {
     this.intervalId = setInterval(() => this.showProgress(), this.frequency);
+
+    this.informUser('Merging files..\nIt might take some time');
 
     ffmpegProcess.stdio[indexOfProgressStream].on('data', (chunk) => {
       this.progressData = chunk;
     });
 
     ffmpegProcess.on('exit', () => {
-      clearInterval(this.intervalId);
-      console.log('Merged!');
+      this.stop();
+      this.informUser('Merged!');
     });
   }
 
@@ -26,9 +32,13 @@ class ProgressBarMergeProcess extends ProgressBar {
 
     const total = toMb(parseInt(args['total_size']));
     if (total !== 'NaNmb') {
-      console.log(`Merging: ${total} merged; bitrate:${args['bitrate']}`);
+      const message = `Merging files: ${total} merged; bitrate: ${args['bitrate']}`;
+
+      // not using informUser here because i'm not sure if user needs this information
+      console.log(message);
     } else {
-      console.log('Erroring');
+      this.informUser('Error has occurred');
+      this.stop();
     }
   }
 }

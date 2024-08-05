@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "backend": "node --watch backend/app",
-    "frontend": "node --watch frontend/index",
+    "start": "node --watch index",
     "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=28301312 --api-hash=1c203a536e7a14524d8a1fa0ccef189d --local"
   },
   "bin": {

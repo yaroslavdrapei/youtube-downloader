@@ -1,10 +1,11 @@
 class ProgressBar {
-  progressData = {};
   intervalId = null;
-  constructor(frequency) {
+  constructor(frequency, informUser=console.log) {
     this.frequency = frequency;
+    this.informUser = informUser;
   }
 
+  start() {}
   showProgress() {}
   stop() {
     clearInterval(this.intervalId);

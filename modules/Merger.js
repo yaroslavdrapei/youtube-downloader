@@ -6,11 +6,15 @@ const ProgressBarMergeProcess = require('./ProgressBarMergeProcess');
 const PROGRESS_STREAM_INDEX = 2;
 
 class Merger {
-  static mergeVideoAudio(dest, filename) {
+  constructor({ progressBarMessageCallback }) {
+    this.progressBarMessageCallback = progressBarMessageCallback;
+  }
+  
+  mergeVideoAudio(dest, filename, videoFile, audioFile) {
     const ffmpegProcess = spawn(ffmpeg, [
       // Set inputs
-      '-i', path.join(dest, 'audio.mp3'),
-      '-i', path.join(dest, 'video.mp4'),
+      '-i', path.join(dest, audioFile),
+      '-i', path.join(dest, videoFile),
       // progress
       '-progress', `pipe:${PROGRESS_STREAM_INDEX}`,
       // Map audio & video from streams
@@ -22,14 +26,16 @@ class Merger {
       // Define output file
       path.join(dest, filename)
     ]);
-
-    console.log('Merging files...');
   
-    new ProgressBarMergeProcess(ffmpegProcess, PROGRESS_STREAM_INDEX, 2000);
+    const progressBar = new ProgressBarMergeProcess(1000, this.progressBarMessageCallback);
+    progressBar.start(ffmpegProcess, PROGRESS_STREAM_INDEX);
 
     return new Promise((resolve, reject) => {    
       ffmpegProcess.on('exit', () => resolve());
-      ffmpegProcess.on('error', () => reject());
+      ffmpegProcess.on('error', () => {
+        progressBar.stop();
+        reject();
+      });
     });
   };
 }

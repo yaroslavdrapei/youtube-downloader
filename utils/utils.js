@@ -1,5 +1,6 @@
 const ytdl = require('@distube/ytdl-core');
 const fs = require('node:fs');
+const fsPromises = require('node:fs/promises');
 const path = require('node:path');
 
 const validateURL = (url) => {
@@ -49,6 +50,23 @@ const getBuffer = async (readableStream) => {
   return Buffer.concat(buffers);
 };
 
+const fileExists = async (pathToFile) => {
+  try {
+    await fsPromises.access(pathToFile);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const generateRandomSeed = (length=10) => {
+  let seed = '';
+  for (let i = 0; i < length; i++) {
+    seed += Math.floor(Math.random() * 10).toString();
+  }
+  return seed;
+};
+
 module.exports = {
   validateURL,
   toMb,
@@ -56,5 +74,7 @@ module.exports = {
   deleteFile,
   emptyFolder,
   postRequest,
-  getBuffer
+  getBuffer,
+  fileExists,
+  generateRandomSeed
 };
