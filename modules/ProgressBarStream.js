@@ -2,9 +2,6 @@ const { toMb } = require('../utils/utils');
 const ProgressBar = require('./ProgressBar');
 
 class StreamData {
-  downloaded;
-  total;
-  ended;
   constructor(downloaded, total, ended) {
     this.downloaded = downloaded;
     this.total = total;

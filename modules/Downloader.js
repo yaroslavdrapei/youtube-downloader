@@ -8,9 +8,18 @@ const ProgressBarStream = require('./ProgressBarStream');
 
 class Downloader {
   constructor({ progressBarMessageCallback }) {
-    this.storagePath = 'E:/youtube-bot-database';
+    this.storagePath = process.env.BOT_STORAGE_PATH;
     this.info = null;
     this.progressBarMessageCallback = progressBarMessageCallback;
+  }
+
+  #generateFilenamesForVideoAudio() {
+    const seed = generateRandomSeed(15);
+
+    return {
+      video: `video${seed}.mp4`,
+      audio: `audio${seed}.mp3`,
+    };
   }
 
   async #basicDownload(itag, extension) {
@@ -53,10 +62,10 @@ class Downloader {
 
     const progressBar = new ProgressBarStream(1000, 'Video', this.progressBarMessageCallback);
 
+    const { video: videoFilename, audio: audioFilename } = this.#generateFilenamesForVideoAudio();
+
     const inputStreams = [];
     const streamErrorPromises = [];
-
-    const seed = generateRandomSeed(15);
 
     formats.forEach((format, i) => {
       const streamErrorPromise = new Promise((resolve, reject) => {
@@ -64,17 +73,11 @@ class Downloader {
         inputStreams.push(inputStream);
 
         inputStream.on('error', (err) => {
-          console.log('Miniget error !');
           progressBar.stop();
           reject(err);
         });
 
-        const outputStream = fs.createWriteStream(
-          path.join(
-            this.storagePath,
-            i == 0 ? `video${seed}.mp4` : `audio${seed}.mp3`
-          )
-        );
+        const outputStream = fs.createWriteStream(path.join(this.storagePath, i == 0 ? videoFilename : audioFilename));
 
         outputStream.on('finish', resolve);
 
@@ -91,17 +94,12 @@ class Downloader {
 
     const filePath = path.join(this.storagePath, this.videoTitle) + '.mp4';
 
-    // await Merger.mergeVideoAudio(this.storagePath, this.videoTitle + '.mp4');
     const merger = new Merger({ progressBarMessageCallback: this.progressBarMessageCallback });
-    await merger.mergeVideoAudio(
-      this.storagePath,
-      this.videoTitle + '.mp4',
-      `video${seed}.mp4`,
-      `audio${seed}.mp3`
-    );
 
-    deleteFile(path.join(this.storagePath, `video${seed}.mp4`));
-    deleteFile(path.join(this.storagePath, `audio${seed}.mp3`));
+    await merger.mergeVideoAudio(this.storagePath, this.videoTitle + '.mp4', videoFilename, audioFilename);
+
+    deleteFile(path.join(this.storagePath, videoFilename));
+    deleteFile(path.join(this.storagePath, audioFilename));
 
     return filePath;
   }

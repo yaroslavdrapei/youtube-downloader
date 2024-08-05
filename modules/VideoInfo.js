@@ -16,12 +16,6 @@ class VideoInfo {
     return this.#info;
   }
 
-  set info(inf) {
-    this.#info = inf;
-    this.#formats = this.#info.formats;
-    this.#title = this.#info.videoDetails.title;
-  }
-
   get formats() {
     return this.#formats;
   }
@@ -50,7 +44,7 @@ class VideoInfo {
 
     if (!contentLength) return 'Unknown';
 
-    if (hasVideo && hasAudio) {
+    if (hasVideo && !hasAudio) {
       return `~${toMb(parseInt(contentLength) + parseInt(lowestAudioFormat.contentLength))}`;
     } else {
       // has only audio

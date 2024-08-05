@@ -11,6 +11,7 @@ export default [
       globals: {
         ...globals.browser,
         Buffer: 'readonly',
+        process: 'readonly'
       },
     },
   },

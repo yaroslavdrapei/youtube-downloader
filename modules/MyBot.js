@@ -1,5 +1,4 @@
 const path = require('node:path');
-// const ytdl = require('@distube/ytdl-core');
 const TelegramBot = require('node-telegram-bot-api');
 const VideoInfo = require('./VideoInfo');
 const Downloader = require('./Downloader');
