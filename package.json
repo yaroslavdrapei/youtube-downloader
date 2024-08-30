@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node --watch index",
     "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local",
-    "dev": "npm run server && npm run start"
+    "build": "node build"
   },
   "keywords": [],
   "author": "",

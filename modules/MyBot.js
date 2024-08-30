@@ -20,38 +20,37 @@ class MyBot extends TelegramBot {
     await this.sendMessage(chatId, message);
   }
 
-  async sendFile(chatId, pathToFile) {
-    const parsedFilename = path.parse(pathToFile);
+  async sendFile(chatId, buffer, extension, title) {
+    const contentType = extension == '.mp4' ? 'video/mp4' : 'audio/mpeg';
 
-    const contentType = parsedFilename.ext == '.mp4' ? 'video/mp4' : 'audio/mpeg';
+    const options = {
+      filename: title,
+      contentType
+    };
 
-    if (parsedFilename.ext == '.mp4') {
-      await this.sendVideo(chatId, pathToFile, { caption: parsedFilename.name }, {
-        filename: parsedFilename.base,
-        contentType
-      });
+    if (extension == '.mp4') {
+      await this.sendVideo(chatId, buffer, { caption: title }, options);
     } else {
-      await this.sendAudio(chatId, pathToFile, {}, {
-        filename: parsedFilename.base,
-        contentType
-      });
+      await this.sendAudio(chatId, buffer, {}, options);
     }
   }
 
   async downloadByInfo(chatId, formatIndex) {
-    if (!this.#infoHolder[chatId]) {
+    const infoHolder = this.#infoHolder[chatId];
+
+    if (!infoHolder) {
       this.sendMessage(chatId, 'Enter the link first');
       return;
     }
 
-    const formats = this.#infoHolder[chatId].getSimplifiedFormats(10);
+    const formats = infoHolder.getSimplifiedFormats(10);
 
     if (formatIndex < 1 || formatIndex > formats.length) {
       this.sendMessage(`Enter number from 1 to ${formats.length}`);
       return;
     }
     
-    const format = this.#infoHolder[chatId].getFormatByItag(formats[formatIndex-1].itag);
+    const format = infoHolder.getFormatByItag(formats[formatIndex-1].itag);
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
@@ -67,15 +66,16 @@ class MyBot extends TelegramBot {
     });
 
     try {
-      const pathToFile = await downloader.download(format, this.#infoHolder[chatId].info);
+      const buffer = await downloader.download(format, infoHolder.info);
   
       this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
   
-      await this.sendFile(chatId, pathToFile);
+      await this.sendFile(chatId, buffer, 
+        formatIndex == 1 ? '.mp3' : '.mp4', 
+        infoHolder.title
+      );
 
       this.deleteMessage(chatId, messageId);
-  
-      deleteFile(pathToFile);
     } catch (err) {
       console.log(err);
       console.log(typeof err);
