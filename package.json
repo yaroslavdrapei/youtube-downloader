@@ -1,27 +1,23 @@
 {
   "name": "youtube-downloader",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --watch index",
-    "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local"
+    "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local",
+    "dev": "npm run server && npm run start"
   },
-  "bin": {
-    "youtube-downloader": "index.js"
-  },
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@distube/ytdl-core": "^4.13.7",
+    "@distube/ytdl-core": "^4.14.1",
     "ffmpeg-static": "^5.2.0",
     "node-telegram-bot-api": "^0.66.0",
     "sanitize-filename": "^1.6.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.8.0",
-    "eslint": "^9.8.0",
-    "globals": "^15.8.0"
+    "eslint": "^9.9.1"
   }
 }

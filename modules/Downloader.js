@@ -34,7 +34,7 @@ class Downloader {
     const returnedStream = ytdl.downloadFromInfo(this.info, { format: format });
 
     const streamErrorPromise = new Promise((resolve, reject) => {
-      const progressBar = new ProgressBarStream(1000, 'Video', this.progressBarMessageCallback);
+      const progressBar = new ProgressBarStream(2500, 'Video', this.progressBarMessageCallback);
       progressBar.start([returnedStream]);
 
       returnedStream.on('error', (err) => {
@@ -60,7 +60,7 @@ class Downloader {
 
     const formats = [videoFormat, audioFormat];
 
-    const progressBar = new ProgressBarStream(1000, 'Video', this.progressBarMessageCallback);
+    const progressBar = new ProgressBarStream(2500, 'Video', this.progressBarMessageCallback);
 
     const { video: videoFilename, audio: audioFilename } = this.#generateFilenamesForVideoAudio();
 

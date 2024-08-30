@@ -53,18 +53,21 @@ class VideoInfo {
   }
 
   #getBestFormatsForVideos() {
-    // only video
-    const sortedFormats = this.#formats.filter(format => format.hasVideo);
+    const badItags = [394, 395, 396, 397, 398, 399, 400, 401, 402];
+
+    // only video && excluding bad itags
+    const sortedFormats = this.#formats.filter(format => format.hasVideo && !badItags.includes(format.itag));
 
     // sorting so videos with audio have a "priority"
     // in order to not waste resourses on merge later
-    // also "mp4" is better than "webm"
+    // "mp4" is better than "webm"
+    // but "webm" takes less space on average than "mp4"
     sortedFormats.sort((a, b) => {
       if (a.hasVideo && a.hasAudio) return -1;
       else if (b.hasVideo && b.hasAudio) return 1;
 
-      if (a.container == 'mp4') return -1;
-      else if (b.container == 'mp4') return 1;
+      if (a.container == 'webm') return -1;
+      else if (b.container == 'webm') return 1;
       return 0;
     });
 
@@ -104,7 +107,7 @@ class VideoInfo {
       const sizeInMb = this.#getSizeInMb(format);
 
       simplifiedFormats.push({
-        name: `${simplifiedFormats.length + 1} - ${format.qualityLabel} ${format.container}; ${sizeInMb}`,
+        name: `${simplifiedFormats.length + 1} - ${format.qualityLabel} mp4; ${sizeInMb}`,
         itag: format.itag,
       });
     });
