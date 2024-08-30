@@ -2,7 +2,8 @@ const ytdl = require('@distube/ytdl-core');
 const MyBot = require('./modules/MyBot');
 const CommandTexts = require('./modules/CommandTexts');
 
-const token = '7371964647:AAEEAv5JqQZlh9wfXdt0QgJJ2AYqY2CLxCc';
+const token = process.env.bot_token;
+console.log(process.env)
 
 const bot = new MyBot(token, { polling: true, baseApiUrl: 'http://localhost:8081' });
 
