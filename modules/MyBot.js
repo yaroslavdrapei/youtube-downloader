@@ -24,7 +24,7 @@ class MyBot extends TelegramBot {
     const contentType = extension == '.mp4' ? 'video/mp4' : 'audio/mpeg';
 
     const options = {
-      filename: title,
+      filename: title+extension,
       contentType
     };
 
