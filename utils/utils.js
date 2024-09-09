@@ -18,17 +18,6 @@ const generateRandomSeed = (length = 10) => {
 };
 
 const getBuffer = async (readableStream) => {
-  // const reader = readableStream.getReader();
-  // const buffers = [];
-
-  // let { done, value } = await reader.read();
-
-  // while (!done) {
-  //   buffers.push(value);
-  //   ({ done, value } = await reader.read());
-  // }
-
-  // return Buffer.concat(buffers);
   const buffers = [];
 
   readableStream.on('data', chunk => {
@@ -41,9 +30,22 @@ const getBuffer = async (readableStream) => {
   });
 };
 
+const ffmpegProcessProgressParser = (args) => {
+  const lines = args.toString().trim().split('\n');
+  const parsedArgs = {};
+
+  for (const l of lines) {
+    const [key, value] = l.split('=');
+    parsedArgs[key.trim()] = value;
+  }
+
+  return parsedArgs;
+};
+
 module.exports = {
   toMb,
   deleteFile,
   generateRandomSeed,
-  getBuffer
+  getBuffer,
+  ffmpegProcessProgressParser
 };

@@ -1,5 +1,5 @@
 const ProgressBar = require('./ProgressBar');
-const { toMb } = require('../utils/utils');
+const { toMb, ffmpegProcessProgressParser } = require('../utils/utils');
 
 class ProgressBarMergeProcess extends ProgressBar {
   progressData = 0;
@@ -23,12 +23,7 @@ class ProgressBarMergeProcess extends ProgressBar {
   }
 
   showProgress() {
-    const lines = this.progressData.toString().trim().split('\n');
-    const args = {};
-    for (const l of lines) {
-      const [key, value] = l.split('=');
-      args[key.trim()] = value;
-    }
+    const args = ffmpegProcessProgressParser(this.progressData);
 
     const total = toMb(parseInt(args['total_size']));
     if (total !== 'NaNmb') {

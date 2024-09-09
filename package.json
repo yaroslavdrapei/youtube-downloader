@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node --watch index",
-    "server": "cd telegram-bot-api/bin && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local",
+    "server": "cd tg-server && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local",
     "build": "node build"
   },
   "keywords": [],

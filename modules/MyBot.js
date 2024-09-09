@@ -1,8 +1,6 @@
-const path = require('node:path');
 const TelegramBot = require('node-telegram-bot-api');
 const VideoInfo = require('./VideoInfo');
 const Downloader = require('./Downloader');
-const { deleteFile } = require('../utils/utils');
 
 class MyBot extends TelegramBot {
   #infoHolder = {};
@@ -77,8 +75,7 @@ class MyBot extends TelegramBot {
 
       this.deleteMessage(chatId, messageId);
     } catch (err) {
-      console.log(err);
-      console.log(typeof err);
+      console.error(err);
       this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${err}`);
     }
   }
