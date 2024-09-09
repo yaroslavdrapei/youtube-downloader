@@ -1,5 +1,3 @@
-const fs = require('node:fs');
-const path = require('node:path');
 const ytdl = require('@distube/ytdl-core');
 const sanitizeFilename = require('sanitize-filename');
 const { getBuffer } = require('../utils/utils');
@@ -30,11 +28,15 @@ class Downloader {
 
     progressBar.start([videoStream, audioStream], this.progressBarMessageCallback);
 
-    const merger = new Merger({ progressBarMessageCallback: console.log });
+    const merger = new Merger();
 
-    const buffer = await merger.mergeVideoAudio(videoStream, audioStream);
-
-    return buffer;
+    try {
+      const buffer = await merger.mergeVideoAudio(videoStream, audioStream);
+      return buffer;
+    } catch (e) {
+      progressBar.stop();
+      throw new Error(e);
+    }
   }
 
   async download(format, info) {

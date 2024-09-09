@@ -3,9 +3,9 @@ const MyBot = require('./modules/MyBot');
 const CommandTexts = require('./modules/CommandTexts');
 
 const token = process.env.bot_token;
-console.log(process.env)
+const port = process.env.port || 8081;
 
-const bot = new MyBot(token, { polling: true, baseApiUrl: 'http://localhost:8081' });
+const bot = new MyBot(token, { polling: true, baseApiUrl: `http://localhost:${port}` });
 
 const commandTexts = new CommandTexts();
 
