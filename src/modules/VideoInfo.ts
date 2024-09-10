@@ -1,29 +1,22 @@
 import ytdl, { videoFormat, videoInfo } from "@distube/ytdl-core";
+import sanitize from "sanitize-filename";
 import { toMb } from "../utils/utils";
 import { SimplifiedFormat } from "../types/types";
 
-export default class VideoInfo {
+export class VideoInfo {
   private _info: videoInfo;
   private _formats: videoFormat[];
   private _title: string;
 
-  constructor(info: videoInfo) {
+  public constructor(info: videoInfo) {
     this._info = info;
     this._formats = this.info.formats;
-    this._title = this.info.videoDetails.title;
+    this._title = sanitize(this.info.videoDetails.title);
   }
 
-  public get info() {
-    return this._info;
-  }
-
-  public get formats() {
-    return this._formats;
-  }
-
-  public get title() {
-    return this._title;
-  }
+  public get info(): videoInfo { return this._info; }
+  public get formats(): videoFormat[] { return this._formats; }
+  public get title(): string { return this._title; }
 
   private getFormatsWithUniqueQuality(formats: videoFormat[]): videoFormat[] {
     const formatsWithUniqueQuality: videoFormat[] = [];
@@ -82,7 +75,7 @@ export default class VideoInfo {
     return this.getFormatsWithUniqueQuality(sortedFormats);
   }
 
-  getFormatByItag(itag: number) {
+  public getFormatByItag(itag: number): videoFormat {
     for (const format of this.formats) {
       if (format.itag === itag) {
         return format;
@@ -92,7 +85,7 @@ export default class VideoInfo {
     throw Error(`No such itag ${itag}`);
   }
 
-  getSimplifiedFormats(max = 10): SimplifiedFormat[] {
+  public getSimplifiedFormats(max = 10): SimplifiedFormat[] {
     const videoFormats = this.getBestFormatsForVideos();
     const simplifiedFormats: SimplifiedFormat[] = [];
 

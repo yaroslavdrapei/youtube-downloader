@@ -1,4 +1,4 @@
-import VideoInfo from "../modules/VideoInfo";
+import { VideoInfo } from "../modules/VideoInfo";
 
 export type FfmpegProgressArgs = {
   frame?: string,

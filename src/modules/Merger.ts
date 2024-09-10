@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import ffmpeg from 'ffmpeg-static';
-import ProgressBarMergeProcess from './ProgressBarMergeProcess';
+import { ProgressBarMergeProcess } from './ProgressBarMergeProcess';
 import { InformUser } from '../types/types';
 import { ReadStream } from 'node:fs';
 import { ffmpegProcessProgressParser, getBuffer } from '../utils/utils';
@@ -12,14 +12,14 @@ const ffmpegStreamIndexes = {
   output: 5,
 };
 
-export default class Merger {
-  private progressBarMessageCallback: InformUser;
+export class Merger {
+  public progressBarMessageCallback: InformUser;
 
-  constructor(progressBarMessageCallback=console.log) {
+  public constructor(progressBarMessageCallback: InformUser=console.log) {
     this.progressBarMessageCallback = progressBarMessageCallback;
   }
   
-  async mergeVideoAudio(videoStream: ReadStream, audioStream: ReadStream) {
+  public async mergeVideoAudio(videoStream: ReadStream, audioStream: ReadStream): Promise<Buffer> {
     const ffmpegProcess = spawn(ffmpeg ?? '', [
       // Set inputs
       '-i', `pipe:${ffmpegStreamIndexes.audio}`,
@@ -53,40 +53,62 @@ export default class Merger {
     return new Promise((resolve, reject) => {
       ffmpegProcess.on('error', err => {
         progressBar.stop();
-        reject(err+'39473498');
+        reject(err);
       });
 
-      // sometime ffmpeg freezes and stops process the video
+      // sometimes ffmpeg freezes and stops process the video
       // here the amount of the processed data is monitored and
       // if the same amount of progress data was the same for n (10)
       // times in a row = i stop the process and return error
-      const processed: string[] = [];
+      const processedData = {
+        prev: '',
+        curr: ''
+      };
 
-      ffmpegProcess.stdio[ffmpegStreamIndexes.progress]?.on('data', data => {
-        const args = ffmpegProcessProgressParser(data);
-        const dataProcessed: string | undefined = args.total_size;
+      // ffmpegProcess.stdio[ffmpegStreamIndexes.progress]?.on('data', data => {
+      //   const args = ffmpegProcessProgressParser(data);
+      //   const dataProcessed: string | undefined = args.total_size;
   
-        if (processed.length < 10) {
-          if (dataProcessed) {
-            processed.push(dataProcessed);
-          }
-  
-          return;
-        }
-  
-        processed.shift();
-        processed.push(dataProcessed ?? '');
-  
-        if (processed[0] == processed[processed.length-1]) {
-          progressBar.stop();
-          reject('Merging process crashed! Try downloading the video later');
-        }
-      });
+      //   if (dataProcessed) {
+      //     processedData.curr = dataProcessed;
+      //   }
+
+      //   setInterval(() => {
+      //     if (processedData.curr === processedData.prev) {
+      //       throw new Error('Merging process crashed! Try downloading the video later');
+      //     }
+
+      //     console.log('Checked!');
+      //     console.log(processedData);
+
+      //     processedData.prev = processedData.curr;
+      //   }, 2000);
+      // });
 
       if (ffmpegProcess.stdio[ffmpegStreamIndexes.output]) {
         getBuffer(ffmpegProcess.stdio[ffmpegStreamIndexes.output] as NodeJS.ReadStream)
         .then(resolve);
       }
     });
-  };
+  }
+
+  private checkMergeStuck(data: Buffer, processedData: {prev: string, curr: string}): void {
+    const args = ffmpegProcessProgressParser(data);
+    const dataProcessed: string | undefined = args.total_size;
+
+    if (dataProcessed) {
+      processedData.curr = dataProcessed;
+    }
+
+    setInterval(() => {
+      if (processedData.curr === processedData.prev) {
+        throw new Error('Merging process crashed! Try downloading the video later');
+      }
+
+      console.log('Checked!');
+      console.log(processedData);
+
+      processedData.prev = processedData.curr;
+    }, 2000);
+  } 
 }

@@ -1,12 +1,13 @@
 import { readFileSync } from 'fs';
 
-export default class CommandTexts {
-  private blocks;
+export class CommandTexts {
+  private _blocks;
   public start;
   public help;
-  constructor() {
-    this.blocks = JSON.parse(readFileSync('./command-text-blocks.json').toString());
-    this.start = `${this.blocks.welcome}\n\n${this.blocks.guide}`;
-    this.help = `${this.blocks.guide}\n\n${this.blocks.faq}`;
+  
+  public constructor() {
+    this._blocks = JSON.parse(readFileSync('./command-text-blocks.json').toString());
+    this.start = `${this._blocks.welcome}\n\n${this._blocks.guide}`;
+    this.help = `${this._blocks.guide}\n\n${this._blocks.faq}`;
   }
 }

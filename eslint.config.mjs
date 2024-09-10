@@ -8,8 +8,10 @@ export default [
   },
   { 
     languageOptions: { 
-      globals: globals.node,
-      NodeJS: 'readonly'
+      globals: {
+        ...globals.node, 
+        NodeJS: true
+      },
     } 
   },
   pluginJs.configs.recommended,
@@ -19,6 +21,8 @@ export default [
       'semi': 'error',
       'no-undef': 'error',
       '@typescript-eslint/no-unused-vars': 'warn',
+      "@typescript-eslint/explicit-function-return-type": "error",
+      "@typescript-eslint/explicit-member-accessibility": "error",
     }
   }
 ];

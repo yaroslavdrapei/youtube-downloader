@@ -1,4 +1,4 @@
-import fs, { ReadStream } from 'fs';
+import fs from 'fs';
 import { FfmpegProgressArgs } from '../types/types';
 
 export const toMb = (bytes: number): string => {
@@ -18,14 +18,14 @@ export const generateRandomSeed = (length = 10): string => {
   return seed;
 };
 
-export const getBuffer = async (readableStream: NodeJS.ReadStream) => {
+export const getBuffer = async (readableStream: NodeJS.ReadStream): Promise<Buffer> => {
   const buffers: Buffer[] = [];
 
   readableStream.on('data', (chunk: Buffer) => {
     buffers.push(chunk);
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Buffer>((resolve, reject) => {
     readableStream.on('end', () => resolve(Buffer.concat(buffers)));
     readableStream.on('error', reject);
   });

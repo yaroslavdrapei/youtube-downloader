@@ -7,7 +7,7 @@
     "start": "node --watch index",
     "server": "cd tg-server && telegram-bot-api --api-id=%api_id% --api-hash=%api_hash% --local",
     "build": "node build",
-    "dev": "tsc && node dist/index"
+    "dev": "webpack && node dist/index"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +24,7 @@
     "@types/node-telegram-bot-api": "^0.64.7",
     "@typescript-eslint/eslint-plugin": "^8.5.0",
     "@typescript-eslint/parser": "^8.5.0",
+    "copy-webpack-plugin": "^12.0.2",
     "eslint": "^9.10.0",
     "globals": "^15.9.0",
     "ts-loader": "^9.5.1",

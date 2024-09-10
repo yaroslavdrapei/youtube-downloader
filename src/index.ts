@@ -1,11 +1,11 @@
 import ytdl from "@distube/ytdl-core";
-import MyBot from "./modules/MyBot";
-import CommandTexts from "./modules/CommandTexts";
+import { MyBot } from "./modules/MyBot";
+import { CommandTexts } from "./modules/CommandTexts";
 
-const token = process.env.bot_token || '';
+const token = process.env.bot_token;
 const port = process.env.port || 8081;
 
-const bot = new MyBot(token, { polling: true, baseApiUrl: `http://localhost:${port}` });
+const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://localhost:${port}` });
 
 const commandTexts = new CommandTexts();
 

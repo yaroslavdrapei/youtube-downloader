@@ -1,26 +1,26 @@
-import TelegramBot, { ChatId, ConstructorOptions, UnbanOptions } from 'node-telegram-bot-api';
-import VideoInfo from './VideoInfo';
-import Downloader from './Downloader';
+import TelegramBot, { ChatId, ConstructorOptions } from 'node-telegram-bot-api';
+import { VideoInfo } from './VideoInfo';
+import { Downloader } from './Downloader';
 import { InfoHolder, SimplifiedFormat } from '../types/types';
 import { videoInfo } from '@distube/ytdl-core';
 
-export default class MyBot extends TelegramBot {
-  private infoHolder: InfoHolder = {};
-  constructor(token: string, options: ConstructorOptions) {
+export class MyBot extends TelegramBot {
+  private _infoHolder: InfoHolder = {};
+  public constructor(token: string, options: ConstructorOptions) {
     super(token, {...options});
   }
 
-  async sendFormats(chatId: ChatId, info: videoInfo) {
-    Object.defineProperty(this.infoHolder, chatId, { value: new VideoInfo(info) });
+  public async sendFormats(chatId: ChatId, info: videoInfo): Promise<void> {
+    Object.defineProperty(this._infoHolder, chatId, { value: new VideoInfo(info) });
 
-    const formats: SimplifiedFormat[] = this.infoHolder[chatId].getSimplifiedFormats(10);
+    const formats: SimplifiedFormat[] = this._infoHolder[chatId].getSimplifiedFormats(10);
 
     const message = "Choose a format (enter the number)\n" + formats.map(f => f.name).join('\n');
 
     await this.sendMessage(chatId, message);
   }
 
-  async sendFile(chatId: ChatId, buffer: Buffer, extension: string, title: string) {
+  public async sendFile(chatId: ChatId, buffer: Buffer, extension: string, title: string): Promise<void> {
     const contentType = extension == '.mp4' ? 'video/mp4' : 'audio/mpeg';
 
     const options = {
@@ -30,13 +30,15 @@ export default class MyBot extends TelegramBot {
 
     if (extension == '.mp4') {
       await this.sendVideo(chatId, buffer, { caption: title }, options);
+
+      return;
     } else {
       await this.sendAudio(chatId, buffer, {}, options);
     }
   }
 
-  async downloadByInfo(chatId: ChatId, formatIndex: number) {
-    const infoHolder = this.infoHolder[chatId];
+  public async downloadByInfo(chatId: ChatId, formatIndex: number): Promise<void> {
+    const infoHolder = this._infoHolder[chatId];
 
     if (!infoHolder) {
       this.sendMessage(chatId, 'Enter the link first');
@@ -54,7 +56,7 @@ export default class MyBot extends TelegramBot {
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
-    const sendProgressUpdateToUser = (message: string) => {
+    const sendProgressUpdateToUser = (message: string): void => {
       this.editMessageText(
         message,
         { chat_id: chatId, message_id: messageId }
@@ -80,7 +82,7 @@ export default class MyBot extends TelegramBot {
     }
   }
 
-  setCommand(command: string, message: string) {
+  public setCommand(command: string, message: string): void {
     this.onText(('/' + command) as unknown as RegExp, msg => {
       const chatId = msg.chat.id;
 
