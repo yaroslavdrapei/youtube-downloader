@@ -1,8 +1,12 @@
-const { toMb } = require('../utils/utils');
-const ProgressBar = require('./ProgressBar');
+import { ReadStream } from "fs";
+import { toMb } from '../utils/utils';
+import { InformUser } from "../types/types";
 
 class StreamData {
-  constructor(downloaded, total, ended) {
+  public downloaded;
+  public total;
+  public ended;
+  constructor(downloaded: number, total: number, ended: boolean) {
     this.downloaded = downloaded;
     this.total = total;
     this.ended = ended;
@@ -10,37 +14,44 @@ class StreamData {
 }
 
 class ProgressData {
-  data = [new StreamData(0, 0, false)];
+  public data = [new StreamData(0, 0, false)];
 
-  constructor(length) {
+  public init(length: number) {
     for (let i = 0; i < length-1; i++) {
       this.data.push(new StreamData(0, 0, false));
     }
   }
 
-  totalSize() {
+  public totalSize() {
     let total = 0;
     this.data.forEach(data => total += data.total);
     return total;
   }
 
-  downloadedSize() {
+  public downloadedSize() {
     let downloaded = 0;
     this.data.forEach(data => downloaded += data.downloaded);
     return downloaded;
   }
 
-  allEnded = () => this.data.every(data => data.ended);
+  public allEnded = () => this.data.every(data => data.ended);
 }
 
-class ProgressBarStream extends ProgressBar {
-  constructor(frequency, prompt, informUser) {
-    super(frequency, informUser);
+export default class ProgressBarStream {
+  private prompt: string;
+  private frequency: number;
+  private informUser: InformUser;
+  private intervalId: NodeJS.Timeout | null = null;
+  private progressData = new ProgressData();
+
+  constructor(frequency: number, prompt: string, informUser: InformUser) {
+    this.frequency = frequency;
     this.prompt = prompt;
+    this.informUser = informUser;
   }
 
-  start(streams) {
-    this.progressData = new ProgressData(streams.length);
+  start(streams: ReadStream[]) {
+    this.progressData.init(streams.length);
 
     this.intervalId = setInterval(() => this.showProgress(), this.frequency);
 
@@ -50,14 +61,14 @@ class ProgressBarStream extends ProgressBar {
         this.progressData.data[i].total = total;
       });
 
-      stream.on('end', (err) => {
+      stream.on('end', (err: string) => {
         if (err) {
           console.log(err);
         } else {
           this.progressData.data[i].ended = true;
           if (this.progressData.allEnded()) {
             this.stop();
-            this.informUser(`${this.prompt} has finished downloading\nTotal size: ${toMb(this.progressData.totalSize())}`);
+            this.informUser(`${this.prompt} has finished downloading\nTotal size: ${(this.progressData.totalSize())}`);
           }
         }
       });
@@ -72,6 +83,10 @@ class ProgressBarStream extends ProgressBar {
 
     this.informUser(message);
   }
-}
 
-module.exports = ProgressBarStream;
+  stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+}

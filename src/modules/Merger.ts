@@ -1,7 +1,9 @@
-const { spawn } = require('node:child_process');
-const ffmpeg = require('ffmpeg-static');
-const ProgressBarMergeProcess = require('./ProgressBarMergeProcess');
-const { getBuffer, ffmpegProcessProgressParser } = require('../utils/utils');
+import { spawn } from 'node:child_process';
+import ffmpeg from 'ffmpeg-static';
+import ProgressBarMergeProcess from './ProgressBarMergeProcess';
+import { InformUser } from '../types/types';
+import { ReadStream } from 'node:fs';
+import { ffmpegProcessProgressParser, getBuffer } from '../utils/utils';
 
 const ffmpegStreamIndexes = {
   progress: 2,
@@ -10,13 +12,15 @@ const ffmpegStreamIndexes = {
   output: 5,
 };
 
-class Merger {
+export default class Merger {
+  private progressBarMessageCallback: InformUser;
+
   constructor(progressBarMessageCallback=console.log) {
     this.progressBarMessageCallback = progressBarMessageCallback;
   }
   
-  async mergeVideoAudio(videoStream, audioStream) {
-    const ffmpegProcess = spawn(ffmpeg, [
+  async mergeVideoAudio(videoStream: ReadStream, audioStream: ReadStream) {
+    const ffmpegProcess = spawn(ffmpeg ?? '', [
       // Set inputs
       '-i', `pipe:${ffmpegStreamIndexes.audio}`,
       '-i', `pipe:${ffmpegStreamIndexes.video}`,
@@ -38,8 +42,8 @@ class Merger {
       ]
     });
 
-    audioStream.pipe(ffmpegProcess.stdio[ffmpegStreamIndexes.audio]);
-    videoStream.pipe(ffmpegProcess.stdio[ffmpegStreamIndexes.video]);
+    audioStream.pipe(ffmpegProcess.stdio[ffmpegStreamIndexes.audio] as NodeJS.WritableStream);
+    videoStream.pipe(ffmpegProcess.stdio[ffmpegStreamIndexes.video] as NodeJS.WritableStream);
   
     const progressBar = new ProgressBarMergeProcess(1000, this.progressBarMessageCallback);
     progressBar.start(ffmpegProcess, ffmpegStreamIndexes.progress);
@@ -56,11 +60,11 @@ class Merger {
       // here the amount of the processed data is monitored and
       // if the same amount of progress data was the same for n (10)
       // times in a row = i stop the process and return error
-      const processed = [];
+      const processed: string[] = [];
 
-      ffmpegProcess.stdio[ffmpegStreamIndexes.progress].on('data', data => {
+      ffmpegProcess.stdio[ffmpegStreamIndexes.progress]?.on('data', data => {
         const args = ffmpegProcessProgressParser(data);
-        const dataProcessed = args.total_size;
+        const dataProcessed: string | undefined = args.total_size;
   
         if (processed.length < 10) {
           if (dataProcessed) {
@@ -71,7 +75,7 @@ class Merger {
         }
   
         processed.shift();
-        processed.push(dataProcessed);
+        processed.push(dataProcessed ?? '');
   
         if (processed[0] == processed[processed.length-1]) {
           progressBar.stop();
@@ -79,10 +83,10 @@ class Merger {
         }
       });
 
-      getBuffer(ffmpegProcess.stdio[ffmpegStreamIndexes.output])
-      .then(resolve);
+      if (ffmpegProcess.stdio[ffmpegStreamIndexes.output]) {
+        getBuffer(ffmpegProcess.stdio[ffmpegStreamIndexes.output] as NodeJS.ReadStream)
+        .then(resolve);
+      }
     });
   };
 }
-
-module.exports = Merger;

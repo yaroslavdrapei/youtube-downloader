@@ -1,26 +1,24 @@
 import globals from 'globals';
 import pluginJs from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
 export default [
-  {
-    files: ['**/*.js'],
-    languageOptions: { sourceType: 'commonjs' },
+  { 
+    files: ['**/*.{js,mjs,cjs,ts}'] 
   },
-  {
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        Buffer: 'readonly',
-        process: 'readonly'
-      },
-    },
+  { 
+    languageOptions: { 
+      globals: globals.node,
+      NodeJS: 'readonly'
+    } 
   },
   pluginJs.configs.recommended,
-  {
+  ...tseslint.configs.recommended,
+  {    
     rules: {
-      'no-unused-vars': 'warn',
-      semi: 'error',
+      'semi': 'error',
       'no-undef': 'error',
-    },
-  },
+      '@typescript-eslint/no-unused-vars': 'warn',
+    }
+  }
 ];
