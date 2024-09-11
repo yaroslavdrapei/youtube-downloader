@@ -11,7 +11,7 @@ export class MyBot extends TelegramBot {
   }
 
   public async sendFormats(chatId: ChatId, info: videoInfo): Promise<void> {
-    Object.defineProperty(this._infoHolder, chatId, { value: new VideoInfo(info) });
+    this._infoHolder[chatId] = new VideoInfo(info);
 
     const formats: SimplifiedFormat[] = this._infoHolder[chatId].getSimplifiedFormats(10);
 

@@ -53,37 +53,35 @@ export class Merger {
     return new Promise((resolve, reject) => {
       ffmpegProcess.on('error', err => {
         progressBar.stop();
-        reject(err);
+        reject(err+'39473498');
       });
 
-      // sometimes ffmpeg freezes and stops process the video
+      // sometime ffmpeg freezes and stops process the video
       // here the amount of the processed data is monitored and
       // if the same amount of progress data was the same for n (10)
       // times in a row = i stop the process and return error
-      const processedData = {
-        prev: '',
-        curr: ''
-      };
+      const processed: string[] = [];
 
-      // ffmpegProcess.stdio[ffmpegStreamIndexes.progress]?.on('data', data => {
-      //   const args = ffmpegProcessProgressParser(data);
-      //   const dataProcessed: string | undefined = args.total_size;
+      ffmpegProcess.stdio[ffmpegStreamIndexes.progress]?.on('data', data => {
+        const args = ffmpegProcessProgressParser(data);
+        const dataProcessed: string | undefined = args.total_size;
   
-      //   if (dataProcessed) {
-      //     processedData.curr = dataProcessed;
-      //   }
-
-      //   setInterval(() => {
-      //     if (processedData.curr === processedData.prev) {
-      //       throw new Error('Merging process crashed! Try downloading the video later');
-      //     }
-
-      //     console.log('Checked!');
-      //     console.log(processedData);
-
-      //     processedData.prev = processedData.curr;
-      //   }, 2000);
-      // });
+        if (processed.length < 10) {
+          if (dataProcessed) {
+            processed.push(dataProcessed);
+          }
+  
+          return;
+        }
+  
+        processed.shift();
+        processed.push(dataProcessed ?? '');
+  
+        if (processed[0] == processed[processed.length-1]) {
+          progressBar.stop();
+          reject('Merging process crashed! Try downloading the video later');
+        }
+      });
 
       if (ffmpegProcess.stdio[ffmpegStreamIndexes.output]) {
         getBuffer(ffmpegProcess.stdio[ffmpegStreamIndexes.output] as NodeJS.ReadStream)
