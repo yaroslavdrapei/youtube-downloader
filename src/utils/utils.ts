@@ -37,7 +37,7 @@ export const ffmpegProcessProgressParser = (args: Buffer): FfmpegProgressArgs =>
 
   for (const l of lines) {
     const [key, value] = l.split('=');
-    Object.defineProperty(parsedArgs, key.trim(), { value: value });
+    parsedArgs[key] = value;
   }
 
   return parsedArgs;
