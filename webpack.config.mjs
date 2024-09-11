@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import CopyPlugin from 'copy-webpack-plugin';
  
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,13 +23,8 @@ export default {
       },
     ],
   },
-  plugins: [
-    new CopyPlugin({
-      patterns: [
-        // TODO: make it work on all OS and copy only executable
-        { from: path.resolve(__dirname, 'node_modules/ffmpeg-static'), to: '' }
-      ]
-    })
-  ],
+  externals: {
+    'ffmpeg-static': 'commonjs2 ffmpeg-static'
+  },
   mode: 'development'
 };
