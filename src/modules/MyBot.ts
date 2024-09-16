@@ -3,6 +3,8 @@ import { VideoInfo } from './VideoInfo';
 import { Downloader } from './Downloader';
 import { InfoHolder, SimplifiedFormat } from '../types/types';
 import { videoInfo } from '@distube/ytdl-core';
+import path from 'node:path';
+import { deleteFile } from '../utils/utils';
 
 export class MyBot extends TelegramBot {
   private _infoHolder: InfoHolder = {};
@@ -20,39 +22,38 @@ export class MyBot extends TelegramBot {
     await this.sendMessage(chatId, message);
   }
 
-  public async sendFile(chatId: ChatId, buffer: Buffer, extension: string, title: string): Promise<void> {
-    const contentType = extension == '.mp4' ? 'video/mp4' : 'audio/mpeg';
+  public async sendFile(chatId: ChatId, pathToFile: string): Promise<void> {
+    const parsedFilename = path.parse(pathToFile);
 
-    const options = {
-      filename: title+extension,
-      contentType
-    };
+    const contentType = parsedFilename.ext == '.mp4' ? 'video/mp4' : 'audio/mpeg';
 
-    if (extension == '.mp4') {
-      await this.sendVideo(chatId, buffer, { caption: title }, options);
-
-      return;
+    if (parsedFilename.ext == '.mp4') {
+      await this.sendVideo(chatId, pathToFile, { caption: parsedFilename.name }, {
+        filename: parsedFilename.base,
+        contentType
+      });
     } else {
-      await this.sendAudio(chatId, buffer, {}, options);
+      await this.sendAudio(chatId, pathToFile, {}, {
+        filename: parsedFilename.base,
+        contentType
+      });
     }
   }
 
   public async downloadByInfo(chatId: ChatId, formatIndex: number): Promise<void> {
-    const infoHolder = this._infoHolder[chatId];
-
-    if (!infoHolder) {
+    if (!this._infoHolder[chatId]) {
       this.sendMessage(chatId, 'Enter the link first');
       return;
     }
 
-    const formats = infoHolder.getSimplifiedFormats(10);
+    const formats = this._infoHolder[chatId].getSimplifiedFormats(10);
 
     if (formatIndex < 1 || formatIndex > formats.length) {
       this.sendMessage(chatId, `Enter number from 1 to ${formats.length}`);
       return;
     }
     
-    const format = infoHolder.getFormatByItag(formats[formatIndex-1].itag);
+    const format = this._infoHolder[chatId].getFormatByItag(formats[formatIndex-1].itag);
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
@@ -63,21 +64,21 @@ export class MyBot extends TelegramBot {
       );
     };
 
-    const downloader = new Downloader(infoHolder.info, sendProgressUpdateToUser);
+    const downloader = new Downloader(this._infoHolder[chatId].info, sendProgressUpdateToUser);
 
     try {
-      const buffer = await downloader.download(format);
+      const pathToFile = await downloader.download(format);
   
       this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
   
-      await this.sendFile(chatId, buffer as Buffer, 
-        formatIndex == 1 ? '.mp3' : '.mp4', 
-        infoHolder.title
-      );
+      await this.sendFile(chatId, pathToFile);
 
       this.deleteMessage(chatId, messageId);
+  
+      deleteFile(pathToFile);
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      console.log(typeof err);
       this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${err}`);
     }
   }
