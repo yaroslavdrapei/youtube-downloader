@@ -23,14 +23,14 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
 
   const info = await ytdl.getInfo(link);
 
-  bot.sendFormats(chatId, info);
+  bot.sendFormats(chatId, link, info);
 });
 
 bot.onText(/^\d{1,2}$/, async (msg) => {
   const chatId = msg.chat.id;
   const index = parseInt(msg.text ?? '');
 
-  bot.downloadByInfo(chatId, index);
+  bot.download(chatId, index);
 });
 
 /*
