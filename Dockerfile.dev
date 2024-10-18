@@ -1,0 +1,11 @@
+FROM node:19
+
+COPY dist/index.js /app/
+COPY package.json /app/
+COPY command-text-blocks.json /app/
+
+WORKDIR /app/
+
+RUN npm i
+
+CMD ["npm", "run", "docker-dev"]

@@ -1,11 +1,14 @@
 import ytdl from "@distube/ytdl-core";
+import dotenv from "dotenv";
 import { MyBot } from "./modules/MyBot";
 import { CommandTexts } from "./modules/CommandTexts";
 
-const token = process.env.bot_token;
-const port = process.env.port || 8081;
+dotenv.config();
 
-const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://localhost:${port}` });
+const token = process.env.BOT_TOKEN_PROD;
+const port = process.env.PORT || 8081;
+
+const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://telegram-server:${port}` });
 
 const commandTexts = new CommandTexts();
 

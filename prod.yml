@@ -1,0 +1,16 @@
+services:
+  telegram-server:
+    image: dexagon/tg-server:1.0
+    ports: 
+      - 8081:8081
+    environment:
+      api_hash: ${API_HASH}
+      api_id: ${API_ID}
+  
+  bot:
+    image: dexagon/bot:1.1
+    env_file:
+      - ./.env
+    depends_on:
+      - telegram-server
+      
