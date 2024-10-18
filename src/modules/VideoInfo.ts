@@ -1,31 +1,25 @@
-const ytdl = require('@distube/ytdl-core');
-const { toMb } = require('../utils/utils');
+import ytdl, { videoFormat, videoInfo } from "@distube/ytdl-core";
+import sanitize from "sanitize-filename";
+import { toMb } from "../utils/utils";
+import { SimplifiedFormat } from "../types/types";
 
-class VideoInfo {
-  #info;
-  #formats;
-  #title;
+export class VideoInfo {
+  private _info: videoInfo;
+  private _formats: videoFormat[];
+  private _title: string;
 
-  constructor(info) {
-    this.#info = info;
-    this.#formats = this.#info.formats;
-    this.#title = this.#info.videoDetails.title;
+  public constructor(info: videoInfo) {
+    this._info = info;
+    this._formats = this.info.formats;
+    this._title = sanitize(this.info.videoDetails.title);
   }
 
-  get info() {
-    return this.#info;
-  }
+  public get info(): videoInfo { return this._info; }
+  public get formats(): videoFormat[] { return this._formats; }
+  public get title(): string { return this._title; }
 
-  get formats() {
-    return this.#formats;
-  }
-
-  get title() {
-    return this.#title;
-  }
-
-  #getFormatsWithUniqueQuality(formats) {
-    const formatsWithUniqueQuality = [];
+  private getFormatsWithUniqueQuality(formats: videoFormat[]): videoFormat[] {
+    const formatsWithUniqueQuality: videoFormat[] = [];
 
     for (const format of formats) {
       if (formatsWithUniqueQuality.some(elem => elem.qualityLabel == format.qualityLabel)) {
@@ -38,9 +32,9 @@ class VideoInfo {
     return formatsWithUniqueQuality;
   }
 
-  #getSizeInMb(format) {
+  private getSizeInMb(format: videoFormat): string {
     const { hasVideo, hasAudio, contentLength } = format;
-    const lowestAudioFormat = ytdl.chooseFormat(this.#formats, { quality: 'lowestaudio' });
+    const lowestAudioFormat = ytdl.chooseFormat(this._formats, { quality: 'lowestaudio' });
 
     if (!contentLength) return 'Unknown';
 
@@ -48,15 +42,15 @@ class VideoInfo {
       return `~${toMb(parseInt(contentLength) + parseInt(lowestAudioFormat.contentLength))}`;
     } else {
       // has only audio
-      return `~${toMb(contentLength)}`;
+      return `~${toMb(parseInt(contentLength))}`;
     }
   }
 
-  #getBestFormatsForVideos() {
+  private getBestFormatsForVideos(): videoFormat[] {
     const badItags = [394, 395, 396, 397, 398, 399, 400, 401, 402];
 
     // only video && excluding bad itags
-    const sortedFormats = this.#formats.filter(format => format.hasVideo && !badItags.includes(format.itag));
+    const sortedFormats = this.formats.filter(format => format.hasVideo && !badItags.includes(format.itag));
 
     // sorting so videos with audio have a "priority"
     // in order to not waste resourses on merge later
@@ -78,11 +72,11 @@ class VideoInfo {
 
     // important to get only one format of each quality to
     // avoid like "360 mp4" and "360 webm" at the same time
-    return this.#getFormatsWithUniqueQuality(sortedFormats);
+    return this.getFormatsWithUniqueQuality(sortedFormats);
   }
 
-  getFormatByItag(itag) {
-    for (const format of this.#formats) {
+  public getFormatByItag(itag: number): videoFormat {
+    for (const format of this.formats) {
       if (format.itag === itag) {
         return format;
       }
@@ -91,29 +85,29 @@ class VideoInfo {
     throw Error(`No such itag ${itag}`);
   }
 
-  getSimplifiedFormats(max = 10) {
-    const videoFormats = this.#getBestFormatsForVideos();
-    const simplifiedFormats = [];
+  public getSimplifiedFormats(max = 10): SimplifiedFormat[] {
+    const videoFormats = this.getBestFormatsForVideos();
+    const simplifiedFormats: SimplifiedFormat[] = [];
 
     // separately adding 1 mp3 format for music
-    const bestAudioFormat = ytdl.chooseFormat(this.#formats, { quality: 'highestaudio' });
+    const bestAudioFormat = ytdl.chooseFormat(this.formats, { quality: 'highestaudio' });
 
     simplifiedFormats.push({
-      name: `${simplifiedFormats.length + 1} - Audio; ${this.#getSizeInMb(bestAudioFormat)}`,
+      name: `${simplifiedFormats.length + 1} - Audio; ${this.getSizeInMb(bestAudioFormat)}`,
       itag: bestAudioFormat.itag,
     });
 
     videoFormats.forEach((format) => {
-      const sizeInMb = this.#getSizeInMb(format);
+      const sizeInMb = this.getSizeInMb(format);
 
-      simplifiedFormats.push({
+      const simplifiedFormat: SimplifiedFormat = {
         name: `${simplifiedFormats.length + 1} - ${format.qualityLabel} mp4; ${sizeInMb}`,
         itag: format.itag,
-      });
+      };
+
+      simplifiedFormats.push(simplifiedFormat);
     });
 
     return simplifiedFormats.slice(0, max);
   }
 }
-
-module.exports = VideoInfo;

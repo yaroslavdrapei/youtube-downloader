@@ -2,3 +2,5 @@
 node_modules
 tests.js
 Dockerfile
+dist
+telegram-bot.yml
