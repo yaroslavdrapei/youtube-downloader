@@ -60,7 +60,7 @@ export class ProgressBarStream extends ProgressBar {
           this._progressData.data[i].ended = true;
           if (this._progressData.allEnded()) {
             this.stop();
-            this.informUser(`${this.prompt} has finished downloading\nTotal size: ${(this._progressData.totalSize())}`);
+            this.informUser(`${this.prompt} has finished downloading\nTotal size: ${toMb(this._progressData.totalSize())}`);
           }
         }
       });

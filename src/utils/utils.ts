@@ -5,6 +5,10 @@ export const toMb = (bytes: number): string => {
   return (bytes / 1024 / 1024).toFixed(2) + 'mb';
 };
 
+export const fromKbtoMb = (kb: number): string => {
+  return (kb / 1024).toFixed(2) + 'mb';
+};
+
 export const deleteFile = (pathToFile: string): void =>
   fs.unlink(pathToFile, (err) => {
     if (err) console.log(err);
