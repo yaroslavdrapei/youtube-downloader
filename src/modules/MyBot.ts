@@ -32,12 +32,14 @@ export class MyBot extends TelegramBot {
         filename: parsedFilename.base,
         contentType
       });
-    } else {
-      await this.sendAudio(chatId, pathToFile, {}, {
-        filename: parsedFilename.base,
-        contentType
-      });
+
+      return;
     }
+
+    await this.sendAudio(chatId, pathToFile, {}, {
+      filename: parsedFilename.base,
+      contentType
+    });
   }
 
   public async download(chatId: ChatId, formatIndex: number): Promise<void> {
@@ -80,6 +82,8 @@ export class MyBot extends TelegramBot {
       console.log(err);
       console.log(typeof err);
       this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${err}`);
+    } finally {
+      delete this.chats[chatId];
     }
   }
 
