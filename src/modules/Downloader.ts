@@ -113,12 +113,16 @@ export class Downloader {
 
     const merger = new Merger(this.progressBarMessageCallback);
 
-    await merger.mergeVideoAudio(filePath, videoPath, audioPath);
+    try {
+      await merger.mergeVideoAudio(filePath, videoPath, audioPath);
+      
+      return filePath;
+    } finally {
+      deleteFile(videoPath);
+      deleteFile(audioPath);
+      deleteFile(filePath);
+    }
 
-    deleteFile(videoPath);
-    deleteFile(audioPath);
-
-    return filePath;
   }
 
   private generateFilenamesForVideoAudio(): {videoFilename: string, audioFilename: string} {
