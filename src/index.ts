@@ -5,7 +5,7 @@ import { CommandTexts } from "./modules/CommandTexts";
 
 dotenv.config();
 
-const token = process.env.BOT_TOKEN_DEV;
+const token = process.env.BOT_TOKEN_PROD;
 const port = process.env.PORT || 8081;
 
 const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://telegram-server:${port}` });
