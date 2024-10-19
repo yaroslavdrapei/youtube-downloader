@@ -68,21 +68,37 @@ export class MyBot extends TelegramBot {
 
     const downloader = new Downloader(sendProgressUpdateToUser);
 
-    try {
-      const pathToFile = await downloader.download(this.chats[chatId], format);
-  
-      this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
-  
-      await this.sendFile(chatId, pathToFile);
+    let pathToFile: string = '';
 
+    try {
+      pathToFile = await downloader.download(this.chats[chatId], format);
+    } catch (e) {
+      console.log(e);
+      this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${e}`);
+      delete this.chats[chatId];
+      return;
+    }
+
+    try {
+      this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
+    } catch (e) {
+      console.log(e);
+    }
+
+    try {
+      await this.sendFile(chatId, pathToFile);
+    } catch (e) {
+      console.log(e);
+      this.sendMessage(chatId, "Error occurred while sending the video. It has probably exceeded limit of 2GB. Try lowering the quality and try again");
+      return;
+    }
+
+    try {
       this.deleteMessage(chatId, messageId);
-  
-      deleteFile(pathToFile);
-    } catch (err) {
-      console.log(err);
-      console.log(typeof err);
-      this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${err}`);
+    } catch (e) {
+      console.log(e);
     } finally {
+      deleteFile(pathToFile);
       delete this.chats[chatId];
     }
   }

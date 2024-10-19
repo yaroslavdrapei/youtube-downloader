@@ -60,6 +60,7 @@ export class Downloader {
 
       returnedStream.on('error', (err) => {
         progressBar.stop();
+        deleteFile(filePath);
         reject(err);
       });
 
@@ -107,7 +108,13 @@ export class Downloader {
 
     progressBar.start(inputStreams as ReadStream[]);
 
-    await Promise.all(downloadPromises);
+    try {
+      await Promise.all(downloadPromises);
+    } catch (e) {
+      deleteFile(videoPath);
+      deleteFile(audioPath);
+      throw Error(e as string);
+    }
 
     const filePath = path.join(this.storage, `${video.title}.mp4`);
 
@@ -115,14 +122,14 @@ export class Downloader {
 
     try {
       await merger.mergeVideoAudio(filePath, videoPath, audioPath);
-      
       return filePath;
+    } catch (e) {
+      deleteFile(filePath);
+      throw Error(e as string);
     } finally {
       deleteFile(videoPath);
       deleteFile(audioPath);
-      deleteFile(filePath);
     }
-
   }
 
   private generateFilenamesForVideoAudio(): {videoFilename: string, audioFilename: string} {
