@@ -1,58 +1,58 @@
-import ytdl, { videoFormat, videoInfo } from "@distube/ytdl-core";
 import { Merger } from "./Merger";
 import { ProgressBarStream } from "./ProgressBarStream";
-import { InformUser } from "../types/types";
+import { InformUser, SimplifiedFormat } from "../types/types";
 import { ReadStream } from "node:fs";
 import path from "node:path";
 import fs from "node:fs";
-import sanitize from "sanitize-filename";
 import { deleteFile, generateRandomSeed } from "../utils/utils";
+import { Video } from "./Video";
+import ytdl from "@distube/ytdl-core";
 
 export class Downloader {
-  public progressBarMessageCallback: InformUser;
-  public storage: string;
-  public title: string;
-  private _info: videoInfo;
+  private progressBarMessageCallback: InformUser;
+  private storage: string;
 
-  public constructor(info: videoInfo, progressBarMessageCallback: InformUser) {
-    this._info = info;
+  public constructor(progressBarMessageCallback: InformUser) {
     this.progressBarMessageCallback = progressBarMessageCallback;
-    this.title = sanitize(this._info.videoDetails.title);
     this.storage = path.join(path.resolve(), 'storage');
+
     fs.mkdir(this.storage, { recursive: true }, err => {
       if (err) throw err;
     });
   }
 
-  public get info(): videoInfo { return this._info; }
-
-  public async download(format: videoFormat): Promise<string> {
+  public async download(video: Video, format: SimplifiedFormat): Promise<string> {
     const { itag, hasVideo, hasAudio } = format;
+
     try {
       if (hasVideo && !hasAudio) {
-        return await this.mergeDownload(itag);
+        return await this.mergeDownload(video, itag);
       }
       
       if (hasVideo && hasAudio) {
-        return await this.basicDownload(itag, '.mp4');
+        return await this.videoDownload(video, itag);
       } 
 
-      return await this.basicDownload(itag, '.mp3');
+      return await this.audioDownload(video, itag);
     } catch (err) {
-      return Promise.reject(err);
+      throw Error(err as string);
     }
   }
 
-  private async basicDownload(itag: number, extension: string): Promise<string> {
-    // need to choose from audioonly formats for music
-    const formats = extension == '.mp3' ? ytdl.filterFormats(this._info.formats, 'audioonly') : this._info.formats;
-    const format = ytdl.chooseFormat(formats, { quality: itag });
+  private async audioDownload(video: Video, itag: number): Promise<string> {
+    return await this.basicDownload(video, itag, '.mp3');
+  }
 
-    const filePath = path.join(this.storage, this.title + extension);
+  private async videoDownload(video: Video, itag: number): Promise<string> {
+    return await this.basicDownload(video, itag, '.mp4');
+  }
+
+  private async basicDownload(video: Video, itag: number, extension: string): Promise<string> {
+    const filePath = path.join(this.storage, `${video.title}.${extension}`);
+    
+    const returnedStream = ytdl(video.link, { quality: itag });
 
     const output = fs.createWriteStream(filePath);
-
-    const returnedStream = ytdl.downloadFromInfo(this.info, { format: format });
 
     const downloadPromise = new Promise((resolve, reject) => {
       const progressBar = new ProgressBarStream(2000, 'Downloading', this.progressBarMessageCallback);
@@ -73,13 +73,13 @@ export class Downloader {
     return filePath;
   }
 
-  private async mergeDownload(itag: number): Promise<string> {
+  private async mergeDownload(video: Video, itag: number): Promise<string> {
     const inputStreams = [
-      ytdl.downloadFromInfo(this._info, { quality: itag }),
-      ytdl.downloadFromInfo(this._info, { quality: 'lowestaudio' })
+      ytdl(video.link, { quality: itag }),
+      ytdl(video.link, { quality: 'lowestaudio' })
     ];
 
-    const progressBar = new ProgressBarStream(2500, 'Video', this.progressBarMessageCallback);
+    const progressBar = new ProgressBarStream(2000, 'Downloading', this.progressBarMessageCallback);
 
     const { videoFilename, audioFilename } = this.generateFilenamesForVideoAudio();
 
@@ -109,7 +109,7 @@ export class Downloader {
 
     await Promise.all(downloadPromises);
 
-    const filePath = path.join(this.storage, this.title + '.mp4');
+    const filePath = path.join(this.storage, `${video.title}.mp4`);
 
     const merger = new Merger(this.progressBarMessageCallback);
 
