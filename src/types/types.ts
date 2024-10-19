@@ -1,4 +1,4 @@
-import { VideoInfo } from "../modules/VideoInfo";
+import { Video } from "../modules/Video";
 
 export type FfmpegProgressArgs = {
   [key: string]: string;
@@ -7,10 +7,12 @@ export type FfmpegProgressArgs = {
 export type InformUser = (info: string) => void;
 
 export type SimplifiedFormat = {
-  name: string;
-  itag: number;
+  name: string,
+  itag: number,
+  hasVideo: boolean,
+  hasAudio: boolean
 };
 
-export type InfoHolder = {
-  [key: string]: VideoInfo;
+export type ChatVideoData = {
+  [key: string]: Video;
 };

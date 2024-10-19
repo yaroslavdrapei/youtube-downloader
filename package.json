@@ -4,16 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --watch index",
-    "build": "node build",
-    "dev": "webpack && node dist/index",
-    "docker-dev": "npx nodemon --legacy-watch index.js"
+    "docker-dev": "npx nodemon --legacy-watch index.js",
+    "dev": "docker-compose -f dev.yml -p dev-bot up",
+    "watch": "webpack --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@distube/ytdl-core": "^4.14.1",
+    "@distube/ytdl-core": "4.14.1",
     "dotenv": "^16.4.5",
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.3",

@@ -1,21 +1,21 @@
 import TelegramBot, { ChatId, ConstructorOptions } from 'node-telegram-bot-api';
-import { VideoInfo } from './VideoInfo';
+import { Video } from './Video';
 import { Downloader } from './Downloader';
-import { InfoHolder, SimplifiedFormat } from '../types/types';
+import { ChatVideoData, SimplifiedFormat } from '../types/types';
 import { videoInfo } from '@distube/ytdl-core';
 import path from 'node:path';
 import { deleteFile } from '../utils/utils';
 
 export class MyBot extends TelegramBot {
-  private _infoHolder: InfoHolder = {};
+  private chats: ChatVideoData = {};
   public constructor(token: string, options: ConstructorOptions) {
     super(token, {...options});
   }
 
-  public async sendFormats(chatId: ChatId, info: videoInfo): Promise<void> {
-    this._infoHolder[chatId] = new VideoInfo(info);
+  public async sendFormats(chatId: ChatId, link: string, info: videoInfo): Promise<void> {
+    this.chats[chatId] = new Video(link, info);
 
-    const formats: SimplifiedFormat[] = this._infoHolder[chatId].getSimplifiedFormats(10);
+    const formats: SimplifiedFormat[] = this.chats[chatId].simplifiedFormats;
 
     const message = "Choose a format (enter the number)\n" + formats.map(f => f.name).join('\n');
 
@@ -32,28 +32,30 @@ export class MyBot extends TelegramBot {
         filename: parsedFilename.base,
         contentType
       });
-    } else {
-      await this.sendAudio(chatId, pathToFile, {}, {
-        filename: parsedFilename.base,
-        contentType
-      });
+
+      return;
     }
+
+    await this.sendAudio(chatId, pathToFile, {}, {
+      filename: parsedFilename.base,
+      contentType
+    });
   }
 
-  public async downloadByInfo(chatId: ChatId, formatIndex: number): Promise<void> {
-    if (!this._infoHolder[chatId]) {
+  public async download(chatId: ChatId, formatIndex: number): Promise<void> {
+    if (!this.chats[chatId]) {
       this.sendMessage(chatId, 'Enter the link first');
       return;
     }
 
-    const formats = this._infoHolder[chatId].getSimplifiedFormats(10);
+    const formats = this.chats[chatId].simplifiedFormats;
 
     if (formatIndex < 1 || formatIndex > formats.length) {
       this.sendMessage(chatId, `Enter number from 1 to ${formats.length}`);
       return;
     }
     
-    const format = this._infoHolder[chatId].getFormatByItag(formats[formatIndex-1].itag);
+    const format = this.chats[chatId].simplifiedFormats[formatIndex - 1];
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
@@ -64,22 +66,40 @@ export class MyBot extends TelegramBot {
       );
     };
 
-    const downloader = new Downloader(this._infoHolder[chatId].info, sendProgressUpdateToUser);
+    const downloader = new Downloader(sendProgressUpdateToUser);
+
+    let pathToFile: string = '';
 
     try {
-      const pathToFile = await downloader.download(format);
-  
-      this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
-  
-      await this.sendFile(chatId, pathToFile);
+      pathToFile = await downloader.download(this.chats[chatId], format);
+    } catch (e) {
+      console.log(e);
+      this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${e}`);
+      delete this.chats[chatId];
+      return;
+    }
 
+    try {
+      this.editMessageText(`Video is being sent to you`, { chat_id: chatId, message_id: messageId });
+    } catch (e) {
+      console.log(e);
+    }
+
+    try {
+      await this.sendFile(chatId, pathToFile);
+    } catch (e) {
+      console.log(e);
+      this.sendMessage(chatId, "Error occurred while sending the video. It has probably exceeded limit of 2GB. Try lowering the quality and try again");
+      return;
+    }
+
+    try {
       this.deleteMessage(chatId, messageId);
-  
+    } catch (e) {
+      console.log(e);
+    } finally {
       deleteFile(pathToFile);
-    } catch (err) {
-      console.log(err);
-      console.log(typeof err);
-      this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${err}`);
+      delete this.chats[chatId];
     }
   }
 
