@@ -7,7 +7,7 @@ export type FfmpegProgressArgs = {
 export type InformUser = (info: string) => void;
 
 export type SimplifiedFormat = {
-  name: string,
+  name?: string,
   itag: number,
   hasVideo: boolean,
   hasAudio: boolean

@@ -1,4 +1,4 @@
-import TelegramBot, { ChatId, ConstructorOptions } from 'node-telegram-bot-api';
+import TelegramBot, { ChatId, ConstructorOptions, InlineKeyboardButton, SendPhotoOptions } from 'node-telegram-bot-api';
 import { Video } from './Video';
 import { Downloader } from './Downloader';
 import { ChatVideoData, SimplifiedFormat } from '../types/types';
@@ -17,9 +17,43 @@ export class MyBot extends TelegramBot {
 
     const formats: SimplifiedFormat[] = this.chats[chatId].simplifiedFormats;
 
-    const message = "Choose a format (enter the number)\n" + formats.map(f => f.name).join('\n');
+    const message = this.chats[chatId].thumbnail?.url;
 
-    await this.sendMessage(chatId, message);
+    const buttons: InlineKeyboardButton[] = formats.map(format => {
+      const name = format.name!;
+      delete format.name;
+
+      return { text: name, callback_data: JSON.stringify(format) };
+    });
+
+    const buildButtonGrid = (buttons: InlineKeyboardButton[], buttonsPerRow=1): InlineKeyboardButton[][] => {
+      const buttonsMarkup: InlineKeyboardButton[][] = [[]];
+
+      buttons.forEach((btn, i) => {
+        if (i % buttonsPerRow == 0) {
+          buttonsMarkup.push([]);
+        }
+
+        buttonsMarkup.at(-1)?.push(btn);
+      });
+
+      return buttonsMarkup;
+    };
+
+    const options: SendPhotoOptions = {
+      reply_markup:{
+        inline_keyboard: buildButtonGrid(buttons, 2),
+      },
+
+      caption: this.chats[chatId].title
+    };
+
+    if (!message) {
+      await this.sendMessage(chatId, this.chats[chatId].title, options);
+      return;
+    }
+    
+    await this.sendPhoto(chatId, message, options);
   }
 
   public async sendFile(chatId: ChatId, pathToFile: string): Promise<void> {
@@ -42,20 +76,11 @@ export class MyBot extends TelegramBot {
     });
   }
 
-  public async download(chatId: ChatId, formatIndex: number): Promise<void> {
+  public async download(chatId: ChatId, format: SimplifiedFormat): Promise<void> {
     if (!this.chats[chatId]) {
       this.sendMessage(chatId, 'Enter the link first');
       return;
     }
-
-    const formats = this.chats[chatId].simplifiedFormats;
-
-    if (formatIndex < 1 || formatIndex > formats.length) {
-      this.sendMessage(chatId, `Enter number from 1 to ${formats.length}`);
-      return;
-    }
-    
-    const format = this.chats[chatId].simplifiedFormats[formatIndex - 1];
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 

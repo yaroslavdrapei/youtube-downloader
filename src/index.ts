@@ -2,6 +2,7 @@ import ytdl from "@distube/ytdl-core";
 import dotenv from "dotenv";
 import { MyBot } from "./modules/MyBot";
 import { CommandTexts } from "./modules/CommandTexts";
+import { SimplifiedFormat } from "./types/types";
 
 dotenv.config();
 
@@ -29,9 +30,15 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
   bot.sendFormats(chatId, link, info);
 });
 
-bot.onText(/^\d{1,2}$/, async (msg) => {
-  const chatId = msg.chat.id;
-  const index = parseInt(msg.text ?? '');
+bot.on('callback_query', callbackQuery => {
+  const simplifiedFormat: SimplifiedFormat = JSON.parse(callbackQuery.data ?? '');
+  const chatId = callbackQuery.message?.chat.id;
 
-  bot.download(chatId, index);
+  if (!chatId) return;
+  if (!simplifiedFormat) {
+    bot.sendMessage(chatId, 'No quality was selected, try again');
+    return;
+  }
+
+  bot.download(chatId, simplifiedFormat);
 });
