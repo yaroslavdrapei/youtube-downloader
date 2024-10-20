@@ -12,7 +12,7 @@ export class MyBot extends TelegramBot {
     super(token, {...options});
   }
 
-  public async sendFormats(chatId: ChatId, link: string, info: videoInfo): Promise<void> {
+  public async sendFormats(chatId: ChatId, link: string, info: videoInfo): Promise<number> {
     this.chats[chatId] = new Video(link, info);
 
     const BUTTONS_PER_ROW = 2;
@@ -37,11 +37,10 @@ export class MyBot extends TelegramBot {
     };
 
     if (!thumbnailUrl) {
-      await this.sendMessage(chatId, this.chats[chatId].title, options);
-      return;
+      return (await this.sendMessage(chatId, this.chats[chatId].title, options)).message_id;
     }
     
-    await this.sendPhoto(chatId, thumbnailUrl, options);
+    return (await this.sendPhoto(chatId, thumbnailUrl, options)).message_id;
   }
 
   public async sendFile(chatId: ChatId, pathToFile: string): Promise<void> {

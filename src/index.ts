@@ -13,12 +13,19 @@ const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://tele
 
 const commandTexts = new CommandTexts();
 
+let formatsMessageId: number | null = null;
+
 bot.setCommand('start', commandTexts.start);
 bot.setCommand('help', commandTexts.help);
 
 bot.onText(/^https:\/\/.+/, async (msg) => {
   const chatId = msg.chat.id;
   const link = msg.text ?? '';
+
+  if (formatsMessageId) {
+    bot.deleteMessage(chatId, formatsMessageId);
+    formatsMessageId = null;
+  }
 
   if (!ytdl.validateURL(link)) {
     bot.sendMessage(chatId, 'Invalid link! Try again');
@@ -27,7 +34,7 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
 
   const info = await ytdl.getInfo(link);
 
-  bot.sendFormats(chatId, link, info);
+  formatsMessageId = await bot.sendFormats(chatId, link, info);
 });
 
 bot.on('callback_query', callbackQuery => {
@@ -35,6 +42,10 @@ bot.on('callback_query', callbackQuery => {
   const chatId = callbackQuery.message?.chat.id;
 
   if (!chatId) return;
+
+  bot.deleteMessage(chatId, callbackQuery.message!.message_id);
+  formatsMessageId = null;
+
   if (!simplifiedFormat) {
     bot.sendMessage(chatId, 'No quality was selected, try again');
     return;
