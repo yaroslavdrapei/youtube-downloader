@@ -1,4 +1,4 @@
-import TelegramBot, { ChatId, ConstructorOptions, InlineKeyboardButton, SendPhotoOptions } from 'node-telegram-bot-api';
+import TelegramBot, { ChatId, ConstructorOptions, InlineKeyboardButton, Message, SendPhotoOptions } from 'node-telegram-bot-api';
 import { Video } from './Video';
 import { Downloader } from './Downloader';
 import { ChatVideoData, SimplifiedFormat } from '../types/types';
@@ -15,88 +15,67 @@ export class MyBot extends TelegramBot {
   public async sendFormats(chatId: ChatId, link: string, info: videoInfo): Promise<void> {
     this.chats[chatId] = new Video(link, info);
 
+    const BUTTONS_PER_ROW = 2;
+
     const formats: SimplifiedFormat[] = this.chats[chatId].simplifiedFormats;
-
-    const message = this.chats[chatId].thumbnail?.url;
-
+    const thumbnailUrl = this.chats[chatId].thumbnail?.url;
     const buttons: InlineKeyboardButton[] = formats.map(format => {
       const name = format.name!;
+
+      // deletion of name field is important because callback_data property has a capacity pf 64 bytes
       delete format.name;
 
       return { text: name, callback_data: JSON.stringify(format) };
     });
 
-    const buildButtonGrid = (buttons: InlineKeyboardButton[], buttonsPerRow=1): InlineKeyboardButton[][] => {
-      const buttonsMarkup: InlineKeyboardButton[][] = [[]];
-
-      buttons.forEach((btn, i) => {
-        if (i % buttonsPerRow == 0) {
-          buttonsMarkup.push([]);
-        }
-
-        buttonsMarkup.at(-1)?.push(btn);
-      });
-
-      return buttonsMarkup;
-    };
-
     const options: SendPhotoOptions = {
       reply_markup:{
-        inline_keyboard: buildButtonGrid(buttons, 2),
+        inline_keyboard: this.buildButtonGrid(buttons, BUTTONS_PER_ROW),
       },
 
       caption: this.chats[chatId].title
     };
 
-    if (!message) {
+    if (!thumbnailUrl) {
       await this.sendMessage(chatId, this.chats[chatId].title, options);
       return;
     }
     
-    await this.sendPhoto(chatId, message, options);
+    await this.sendPhoto(chatId, thumbnailUrl, options);
   }
 
   public async sendFile(chatId: ChatId, pathToFile: string): Promise<void> {
     const parsedFilename = path.parse(pathToFile);
 
-    const contentType = parsedFilename.ext == '.mp4' ? 'video/mp4' : 'audio/mpeg';
+    const options = {
+      filename: parsedFilename.base,
+      contentType: parsedFilename.ext == '.mp4' ? 'video/mp4' : 'audio/mpeg'
+    };
 
     if (parsedFilename.ext == '.mp4') {
-      await this.sendVideo(chatId, pathToFile, { caption: parsedFilename.name }, {
-        filename: parsedFilename.base,
-        contentType
-      });
-
+      await this.sendVideo(chatId, pathToFile, { caption: parsedFilename.name }, options);
       return;
     }
 
-    await this.sendAudio(chatId, pathToFile, {}, {
-      filename: parsedFilename.base,
-      contentType
-    });
+    await this.sendAudio(chatId, pathToFile, {}, options);
   }
 
   public async download(chatId: ChatId, format: SimplifiedFormat): Promise<void> {
-    if (!this.chats[chatId]) {
+    const currentVideo: Video | undefined = this.chats[chatId];
+
+    if (!currentVideo) {
       this.sendMessage(chatId, 'Enter the link first');
       return;
     }
 
     const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
-    const sendProgressUpdateToUser = (message: string): void => {
-      this.editMessageText(
-        message,
-        { chat_id: chatId, message_id: messageId }
-      );
-    };
+    const downloader = new Downloader(this.createEditMessageText(chatId, messageId));
 
-    const downloader = new Downloader(sendProgressUpdateToUser);
-
-    let pathToFile: string = '';
+    let pathToFile = '';
 
     try {
-      pathToFile = await downloader.download(this.chats[chatId], format);
+      pathToFile = await downloader.download(currentVideo, format);
     } catch (e) {
       console.log(e);
       this.sendMessage(chatId, `Error has occurred while downloading\nMore info: ${e}`);
@@ -135,4 +114,29 @@ export class MyBot extends TelegramBot {
       this.sendMessage(chatId, message);
     });
   }
+
+  private buildButtonGrid = (buttons: InlineKeyboardButton[], buttonsPerRow=1): InlineKeyboardButton[][] => {
+    const buttonsMarkup: InlineKeyboardButton[][] = [[]];
+
+    buttons.forEach((btn, i) => {
+      if (i % buttonsPerRow == 0) {
+        buttonsMarkup.push([]);
+      }
+
+      buttonsMarkup.at(-1)?.push(btn);
+    });
+
+    return buttonsMarkup;
+  };
+
+  private createEditMessageText = (chatId: ChatId, messageId: number): (message: string) => Promise<boolean | Message> => {
+    const resultFunc = (message: string) : Promise<boolean | Message> => {
+      return this.editMessageText(
+        message,
+        { chat_id: chatId, message_id: messageId }
+      );
+    };
+
+    return resultFunc;
+  };
 };
