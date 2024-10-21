@@ -1,12 +1,12 @@
-import ytdl from "@distube/ytdl-core";
+import ytdl, { videoInfo } from "@distube/ytdl-core";
 import dotenv from "dotenv";
 import { MyBot } from "./modules/MyBot";
 import { CommandTexts } from "./modules/CommandTexts";
-import { SimplifiedFormat } from "./types/types";
+import { SimplifiedFormat, YtdlError } from "./types/types";
 
 dotenv.config();
 
-const token = process.env.BOT_TOKEN_PROD;
+const token = process.env.BOT_TOKEN_DEV;
 const port = process.env.PORT || 8081;
 
 const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://telegram-server:${port}` });
@@ -32,9 +32,25 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
     return;
   }
 
-  const info = await ytdl.getInfo(link);
+  let info: videoInfo;
 
-  formatsMessageId = await bot.sendFormats(chatId, link, info);
+  try {
+    info = await ytdl.getInfo(link);
+    formatsMessageId = await bot.sendFormats(chatId, link, info);
+  } catch (e) {
+    console.log(e);
+    const errorMessage = (e as YtdlError).message;
+
+    let messageToUser = 'Unknown error';
+
+    if (errorMessage.includes('age')) {
+      messageToUser = 'Video is age restricted';
+    } else if (errorMessage.includes('bot')) {
+      messageToUser = 'Server overload';
+    }
+
+    bot.sendMessage(chatId, 'Error occurred: ' + messageToUser);
+  }
 });
 
 bot.on('callback_query', callbackQuery => {
