@@ -40,7 +40,13 @@ export class MyBot extends TelegramBot {
       return (await this.sendMessage(chatId, this.chats[chatId].title, options)).message_id;
     }
     
-    return (await this.sendPhoto(chatId, thumbnailUrl, options)).message_id;
+    // in case if path to thumbnail is not correct just send a title with formats
+    try {
+      return (await this.sendPhoto(chatId, thumbnailUrl, options)).message_id;
+    } catch (e) {
+      console.log(e);
+      return (await this.sendMessage(chatId, this.chats[chatId].title, options)).message_id;
+    }
   }
 
   public async sendFile(chatId: ChatId, pathToFile: string): Promise<void> {
