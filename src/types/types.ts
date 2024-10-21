@@ -16,3 +16,7 @@ export type SimplifiedFormat = {
 export type ChatVideoData = {
   [key: string]: Video;
 };
+
+export type YtdlError = {
+  message: string;
+}
