@@ -2,6 +2,7 @@ import ytdl from "@distube/ytdl-core";
 import dotenv from "dotenv";
 import { MyBot } from "./modules/MyBot";
 import { CommandTexts } from "./modules/CommandTexts";
+import { SimplifiedFormat } from "./types/types";
 
 dotenv.config();
 
@@ -12,12 +13,19 @@ const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://tele
 
 const commandTexts = new CommandTexts();
 
+let formatsMessageId: number | null = null;
+
 bot.setCommand('start', commandTexts.start);
 bot.setCommand('help', commandTexts.help);
 
 bot.onText(/^https:\/\/.+/, async (msg) => {
   const chatId = msg.chat.id;
   const link = msg.text ?? '';
+
+  if (formatsMessageId) {
+    bot.deleteMessage(chatId, formatsMessageId);
+    formatsMessageId = null;
+  }
 
   if (!ytdl.validateURL(link)) {
     bot.sendMessage(chatId, 'Invalid link! Try again');
@@ -26,12 +34,15 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
 
   const info = await ytdl.getInfo(link);
 
-  bot.sendFormats(chatId, link, info);
+  formatsMessageId = await bot.sendFormats(chatId, link, info);
 });
 
-bot.onText(/^\d{1,2}$/, async (msg) => {
-  const chatId = msg.chat.id;
-  const index = parseInt(msg.text ?? '');
+bot.on('callback_query', callbackQuery => {
+  const simplifiedFormat: SimplifiedFormat = JSON.parse(callbackQuery.data!);
+  const chatId = callbackQuery.message!.chat.id;
 
-  bot.download(chatId, index);
+  bot.deleteMessage(chatId, callbackQuery.message!.message_id);
+  formatsMessageId = null;
+
+  bot.download(chatId, simplifiedFormat);
 });

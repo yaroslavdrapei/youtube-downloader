@@ -1,4 +1,4 @@
-import ytdl, { videoFormat, videoInfo } from "@distube/ytdl-core";
+import ytdl, { thumbnail, videoFormat, videoInfo } from "@distube/ytdl-core";
 import sanitize from "sanitize-filename";
 import { toMb } from "../utils/utils";
 import { SimplifiedFormat } from "../types/types";
@@ -8,12 +8,14 @@ export class Video {
   public title: string;
   public formats: videoFormat[];
   public simplifiedFormats: SimplifiedFormat[];
+  public thumbnail: thumbnail | undefined;
 
   public constructor(link: string, info: videoInfo, numberOfSimplifiedFormats = 10) {
     this.link = link;
     this.title = sanitize(info.videoDetails.title);
     this.formats = info.formats;
     this.simplifiedFormats = this.getSimplifiedFormats(numberOfSimplifiedFormats);
+    this.thumbnail = info.videoDetails.thumbnails.at(-1);
   }
 
   private getSimplifiedFormats(max: number): SimplifiedFormat[] {
@@ -24,7 +26,7 @@ export class Video {
     const bestAudioFormat = ytdl.chooseFormat(this.formats, { quality: 'highestaudio' });
 
     simplifiedFormats.push({
-      name: `${simplifiedFormats.length + 1} - Audio; ${this.getSizeInMb(bestAudioFormat)}`,
+      name: `🎼 mp3; ${this.getSizeInMb(bestAudioFormat)}`,
       itag: bestAudioFormat.itag,
       hasAudio: bestAudioFormat.hasAudio,
       hasVideo: bestAudioFormat.hasVideo
@@ -34,7 +36,7 @@ export class Video {
       const sizeInMb = this.getSizeInMb(format);
 
       const simplifiedFormat: SimplifiedFormat = {
-        name: `${simplifiedFormats.length + 1} - ${format.qualityLabel} mp4; ${sizeInMb}`,
+        name: `🎥 ${format.qualityLabel}; ${sizeInMb}`,
         itag: format.itag,
         hasAudio: format.hasAudio,
         hasVideo: format.hasVideo
