@@ -5,9 +5,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
-  entry: './src/index.ts',
+  context: path.resolve(__dirname, 'src'),
+  entry: {
+    bot: './bot/index.ts',
+    backend: './backend/index.ts'
+  },
   output: {
-    filename: 'index.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
   },
   target: 'node',
@@ -26,5 +30,6 @@ export default {
   externals: {
     'ffmpeg-static': 'commonjs2 ffmpeg-static'
   },
+  watch: true,
   mode: 'development'
 };

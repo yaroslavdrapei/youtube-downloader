@@ -1,7 +1,7 @@
-import ytdl, { thumbnail, videoFormat, videoInfo } from "@distube/ytdl-core";
-import sanitize from "sanitize-filename";
-import { toMb } from "../utils/utils";
-import { SimplifiedFormat } from "../types/types";
+import ytdl, { thumbnail, videoFormat, videoInfo } from '@distube/ytdl-core';
+import sanitize from 'sanitize-filename';
+import { toMb } from '../utils/utils';
+import { SimplifiedFormat } from '../types/types';
 
 export class Video {
   public link: string;
@@ -52,7 +52,7 @@ export class Video {
     const formatsWithUniqueQuality: videoFormat[] = [];
 
     for (const format of formats) {
-      if (formatsWithUniqueQuality.some(elem => elem.qualityLabel == format.qualityLabel)) {
+      if (formatsWithUniqueQuality.some((elem) => elem.qualityLabel == format.qualityLabel)) {
         continue;
       }
 
@@ -80,7 +80,7 @@ export class Video {
     const badItags = [394, 395, 396, 397, 398, 399, 400, 401, 402];
 
     // only video && excluding bad itags
-    const sortedFormats = this.formats.filter(format => format.hasVideo && !badItags.includes(format.itag));
+    const sortedFormats = this.formats.filter((format) => format.hasVideo && !badItags.includes(format.itag));
 
     // sorting so videos with audio have a "priority"
     // in order to not waste resourses on merge later

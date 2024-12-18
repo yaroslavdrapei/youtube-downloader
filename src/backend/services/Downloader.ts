@@ -1,12 +1,12 @@
-import { Merger } from "./Merger";
-import { ProgressBarStream } from "./ProgressBarStream";
-import { InformUser, SimplifiedFormat } from "../types/types";
-import { ReadStream } from "node:fs";
-import path from "node:path";
-import fs from "node:fs";
-import { deleteFile, generateRandomSeed } from "../utils/utils";
-import { Video } from "./Video";
-import ytdl from "@distube/ytdl-core";
+import { Merger } from './Merger';
+import { ProgressBarStream } from './ProgressBarStream';
+import { InformUser, SimplifiedFormat } from '../../shared/types/types';
+import { ReadStream } from 'node:fs';
+import path from 'node:path';
+import fs from 'node:fs';
+import { deleteFile, generateRandomSeed } from '../../shared/utils/utils';
+import { Video } from '../../shared/services/Video';
+import ytdl from '@distube/ytdl-core';
 
 export class Downloader {
   private progressBarMessageCallback: InformUser;
@@ -16,7 +16,7 @@ export class Downloader {
     this.progressBarMessageCallback = progressBarMessageCallback;
     this.storage = path.join(path.resolve(), 'storage');
 
-    fs.mkdir(this.storage, { recursive: true }, err => {
+    fs.mkdir(this.storage, { recursive: true }, (err) => {
       if (err) throw err;
     });
   }
@@ -28,10 +28,10 @@ export class Downloader {
       if (hasVideo && !hasAudio) {
         return await this.mergeDownload(video, itag);
       }
-      
+
       if (hasVideo && hasAudio) {
         return await this.videoDownload(video, itag);
-      } 
+      }
 
       return await this.audioDownload(video, itag);
     } catch (err) {
@@ -49,7 +49,7 @@ export class Downloader {
 
   private async basicDownload(video: Video, itag: number, extension: string): Promise<string> {
     const filePath = path.join(this.storage, `${video.title}.${extension}`);
-    
+
     const returnedStream = ytdl(video.link, { quality: itag });
 
     const output = fs.createWriteStream(filePath);
@@ -75,10 +75,7 @@ export class Downloader {
   }
 
   private async mergeDownload(video: Video, itag: number): Promise<string> {
-    const inputStreams = [
-      ytdl(video.link, { quality: itag }),
-      ytdl(video.link, { quality: 'lowestaudio' })
-    ];
+    const inputStreams = [ytdl(video.link, { quality: itag }), ytdl(video.link, { quality: 'lowestaudio' })];
 
     const progressBar = new ProgressBarStream(2000, 'Downloading', this.progressBarMessageCallback);
 
@@ -132,12 +129,12 @@ export class Downloader {
     }
   }
 
-  private generateFilenamesForVideoAudio(): {videoFilename: string, audioFilename: string} {
+  private generateFilenamesForVideoAudio(): { videoFilename: string; audioFilename: string } {
     const seed = generateRandomSeed(15);
 
     return {
       videoFilename: `video${seed}.mp4`,
-      audioFilename: `audio${seed}.mp3`,
+      audioFilename: `audio${seed}.mp3`
     };
   }
 }

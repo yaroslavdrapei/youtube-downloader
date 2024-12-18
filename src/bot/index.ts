@@ -1,15 +1,15 @@
-import ytdl, { videoInfo } from "@distube/ytdl-core";
-import dotenv from "dotenv";
-import { MyBot } from "./modules/MyBot";
-import { CommandTexts } from "./modules/CommandTexts";
-import { SimplifiedFormat, YtdlError } from "./types/types";
+import ytdl, { videoInfo } from '@distube/ytdl-core';
+import dotenv from 'dotenv';
+import { MyBot } from './services/MyBot';
+import { CommandTexts } from './services/CommandTexts';
+import { SimplifiedFormat, YtdlError } from '../shared/types/types';
 
 dotenv.config();
 
-const token = process.env.BOT_TOKEN_PROD;
+const token = process.env.BOT_TOKEN;
 const port = process.env.PORT || 8081;
 
-const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://telegram-server:${port}` });
+const bot = new MyBot(token as string, { polling: true, baseApiUrl: `http://localhost:${port}` });
 
 const commandTexts = new CommandTexts();
 
@@ -27,16 +27,8 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
     formatsMessageId = null;
   }
 
-  if (!ytdl.validateURL(link)) {
-    bot.sendMessage(chatId, 'Invalid link! Try again');
-    return;
-  }
-
-  let info: videoInfo;
-
   try {
-    info = await ytdl.getInfo(link);
-    formatsMessageId = await bot.sendFormats(chatId, link, info);
+    formatsMessageId = await bot.sendFormats(chatId, link);
   } catch (e) {
     console.log(e);
     const errorMessage = (e as YtdlError).message;
@@ -53,7 +45,7 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
   }
 });
 
-bot.on('callback_query', callbackQuery => {
+bot.on('callback_query', (callbackQuery) => {
   const simplifiedFormat: SimplifiedFormat = JSON.parse(callbackQuery.data!);
   const chatId = callbackQuery.message!.chat.id;
 

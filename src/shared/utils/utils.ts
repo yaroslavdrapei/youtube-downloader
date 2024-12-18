@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { FfmpegProgressArgs } from '../types/types';
+import { FfmpegProgressArgs } from '../../shared/types/types';
 
 export const toMb = (bytes: number): string => {
   return (bytes / 1024 / 1024).toFixed(2) + 'mb';

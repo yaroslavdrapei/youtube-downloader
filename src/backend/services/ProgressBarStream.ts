@@ -1,7 +1,7 @@
-import { ReadStream } from "fs";
-import { toMb } from '../utils/utils';
-import { InformUser } from "../types/types";
-import { ProgressBar } from "./ProgressBar";
+import { ReadStream } from 'fs';
+import { toMb } from '../../shared/utils/utils';
+import { InformUser } from '../../shared/types/types';
+import { ProgressBar } from './ProgressBar';
 
 class StreamData {
   public downloaded = 0;
@@ -13,24 +13,24 @@ class ProgressData {
   public data = [new StreamData()];
 
   public init(length: number): void {
-    for (let i = 0; i < length-1; i++) {
+    for (let i = 0; i < length - 1; i++) {
       this.data.push(new StreamData());
     }
   }
 
   public totalSize(): number {
     let total = 0;
-    this.data.forEach(data => total += data.total);
+    this.data.forEach((data) => (total += data.total));
     return total;
   }
 
   public downloadedSize(): number {
     let downloaded = 0;
-    this.data.forEach(data => downloaded += data.downloaded);
+    this.data.forEach((data) => (downloaded += data.downloaded));
     return downloaded;
   }
 
-  public allEnded = (): boolean => this.data.every(data => data.ended);
+  public allEnded = (): boolean => this.data.every((data) => data.ended);
 }
 
 export class ProgressBarStream extends ProgressBar {
@@ -60,7 +60,9 @@ export class ProgressBarStream extends ProgressBar {
           this._progressData.data[i].ended = true;
           if (this._progressData.allEnded()) {
             this.stop();
-            this.informUser(`${this.prompt} has finished downloading\nTotal size: ${toMb(this._progressData.totalSize())}`);
+            this.informUser(
+              `${this.prompt} has finished downloading\nTotal size: ${toMb(this._progressData.totalSize())}`
+            );
           }
         }
       });
