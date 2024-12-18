@@ -1,6 +1,8 @@
-import ytdl, { videoInfo } from '@distube/ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import express, { Request, Response, NextFunction } from 'express';
 import { Video } from '../shared/services/Video';
+import { SimplifiedFormat } from '../shared/types/types';
+import { Downloader } from './services/Downloader';
 
 const validateUrl = (req: Request, res: Response, next: NextFunction): void => {
   const link = req.query.link as string;
@@ -42,8 +44,15 @@ app.get('/api/info', validateUrl, async (req, res) => {
   }
 });
 
-// app.get('/api/download', (req, res) => {});
+app.post('/api/download', (req, res) => {
+  const link = req.body.link as string;
+  const format = req.body.format as SimplifiedFormat;
+
+  const downloader = new Downloader(console.log);
+
+  downloader.download()
+});
 
 app.listen(PORT, () => {
-  console.log(`Port: ${PORT}`);
+  console.log(`Port: ${PORT}`); 
 });
