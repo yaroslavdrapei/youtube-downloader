@@ -1,10 +1,14 @@
-import ytdl, { videoInfo } from "@distube/ytdl-core";
-import dotenv from "dotenv";
-import { MyBot } from "./modules/MyBot";
-import { CommandTexts } from "./modules/CommandTexts";
-import { SimplifiedFormat, YtdlError } from "./types/types";
+import dotenv from 'dotenv';
 
 dotenv.config();
+
+import { MyBot } from './modules/MyBot';
+import { CommandTexts } from './modules/CommandTexts';
+import { SimplifiedFormat, VideoInfo } from './types/types';
+import YTDlpWrap from 'yt-dlp-wrap';
+
+YTDlpWrap.downloadFromGithub('./yt-dlp', undefined, 'linux');
+const ytdlpwrap = new YTDlpWrap('./yt-dlp');
 
 const token = process.env.BOT_TOKEN_PROD;
 const port = process.env.PORT || 8081;
@@ -27,33 +31,17 @@ bot.onText(/^https:\/\/.+/, async (msg) => {
     formatsMessageId = null;
   }
 
-  if (!ytdl.validateURL(link)) {
-    bot.sendMessage(chatId, 'Invalid link! Try again');
-    return;
-  }
-
-  let info: videoInfo;
-
   try {
-    info = await ytdl.getInfo(link);
+    const info: VideoInfo = JSON.parse(await ytdlpwrap.execPromise([link, '-j']));
     formatsMessageId = await bot.sendFormats(chatId, link, info);
   } catch (e) {
+    bot.sendMessage(chatId, 'Invalid link');
     console.log(e);
-    const errorMessage = (e as YtdlError).message;
-
-    let messageToUser = 'Unknown error';
-
-    if (errorMessage.includes('age')) {
-      messageToUser = 'Video is age restricted';
-    } else if (errorMessage.includes('bot')) {
-      messageToUser = 'Server overload';
-    }
-
-    bot.sendMessage(chatId, 'Error occurred: ' + messageToUser);
+    return;
   }
 });
 
-bot.on('callback_query', callbackQuery => {
+bot.on('callback_query', (callbackQuery) => {
   const simplifiedFormat: SimplifiedFormat = JSON.parse(callbackQuery.data!);
   const chatId = callbackQuery.message!.chat.id;
 

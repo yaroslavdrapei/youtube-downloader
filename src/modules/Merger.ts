@@ -6,10 +6,10 @@ import { fromKbtoMb } from '../utils/utils';
 export class Merger {
   public progressBarMessageCallback: InformUser;
 
-  public constructor(progressBarMessageCallback: InformUser=console.log) {
+  public constructor(progressBarMessageCallback: InformUser = console.log) {
     this.progressBarMessageCallback = progressBarMessageCallback;
   }
-  
+
   public async mergeVideoAudio(outputPath: string, videoPath: string, audioPath: string): Promise<string> {
     ffmpeg.setFfmpegPath(ffmpegPath as string);
 
@@ -19,29 +19,29 @@ export class Merger {
 
     return new Promise((resolve, reject) => {
       ffmpeg()
-      .input(videoPath)
-      .input(audioPath)
-      .output(outputPath)
-      .videoCodec('copy') 
-      .audioCodec('aac')
-      .on('progress', data => {
-        processedData = data.targetSize;
-        
-        if (!intervalId) {
-          intervalId = setInterval(() => {
-            this.progressBarMessageCallback(`Merging files. Data processed: ${fromKbtoMb(processedData)}`);
-          }, frequency); 
-        };
-      })
-      .on('end', () => {
-        resolve(outputPath);
-        clearInterval(intervalId);
-      })
-      .on('error', err => {
-        reject(`Error occurred: ${err}`);
-        clearInterval(intervalId);
-      })
-      .run();
+        .input(videoPath)
+        .input(audioPath)
+        .output(outputPath)
+        .videoCodec('copy')
+        .audioCodec('aac')
+        .on('progress', (data) => {
+          processedData = data.targetSize;
+
+          if (!intervalId) {
+            intervalId = setInterval(() => {
+              this.progressBarMessageCallback(`Merging files. Data processed: ${fromKbtoMb(processedData)}`);
+            }, frequency);
+          }
+        })
+        .on('end', () => {
+          resolve(outputPath);
+          clearInterval(intervalId);
+        })
+        .on('error', (err) => {
+          reject(`Error occurred: ${err}`);
+          clearInterval(intervalId);
+        })
+        .run();
     });
   }
 }

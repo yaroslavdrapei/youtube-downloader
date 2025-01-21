@@ -1,45 +1,44 @@
-import ytdl, { thumbnail, videoFormat, videoInfo } from "@distube/ytdl-core";
-import sanitize from "sanitize-filename";
-import { toMb } from "../utils/utils";
-import { SimplifiedFormat } from "../types/types";
+import sanitize from 'sanitize-filename';
+import { toMb } from '../utils/utils';
+import { Format, SimplifiedFormat, VideoInfo } from '../types/types';
 
 export class Video {
   public link: string;
   public title: string;
-  public formats: videoFormat[];
+  public formats: Format[];
   public simplifiedFormats: SimplifiedFormat[];
-  public thumbnail: thumbnail | undefined;
+  public thumbnail: string | undefined;
 
-  public constructor(link: string, info: videoInfo, numberOfSimplifiedFormats = 10) {
+  public constructor(link: string, info: VideoInfo, numberOfSimplifiedFormats = 10) {
     this.link = link;
-    this.title = sanitize(info.videoDetails.title);
+    this.title = sanitize(info.title);
     this.formats = info.formats;
     this.simplifiedFormats = this.getSimplifiedFormats(numberOfSimplifiedFormats);
-    this.thumbnail = info.videoDetails.thumbnails.at(-1);
+    this.thumbnail = info.thumbnail || info.thumbnails?.at(-1)?.url;
   }
 
   private getSimplifiedFormats(max: number): SimplifiedFormat[] {
-    const videoFormats = this.getBestFormatsForVideos();
+    const formats = this.getBestFormatsForVideos();
     const simplifiedFormats: SimplifiedFormat[] = [];
 
     // separately adding 1 mp3 format for music
-    const bestAudioFormat = ytdl.chooseFormat(this.formats, { quality: 'highestaudio' });
+    const bestAudioFormat = this.formats.find((f) => f.format_id == '140') as Format;
 
     simplifiedFormats.push({
-      name: `🎼 mp3; ${this.getSizeInMb(bestAudioFormat)}`,
-      itag: bestAudioFormat.itag,
-      hasAudio: bestAudioFormat.hasAudio,
-      hasVideo: bestAudioFormat.hasVideo
+      name: `🎼 mp3; ${toMb(bestAudioFormat.filesize)}`,
+      itag: +bestAudioFormat.format_id,
+      hasAudio: true,
+      hasVideo: false
     });
 
-    videoFormats.forEach((format) => {
-      const sizeInMb = this.getSizeInMb(format);
+    formats.forEach((format) => {
+      const sizeInMb = toMb(format.filesize);
 
       const simplifiedFormat: SimplifiedFormat = {
-        name: `🎥 ${format.qualityLabel}; ${sizeInMb}`,
-        itag: format.itag,
-        hasAudio: format.hasAudio,
-        hasVideo: format.hasVideo
+        name: `🎥 ${format.format_note}; ${sizeInMb}`,
+        itag: +format.format_id,
+        hasAudio: format.acodec != 'none',
+        hasVideo: true
       };
 
       simplifiedFormats.push(simplifiedFormat);
@@ -48,11 +47,11 @@ export class Video {
     return simplifiedFormats.slice(0, max);
   }
 
-  private getFormatsWithUniqueQuality(formats: videoFormat[]): videoFormat[] {
-    const formatsWithUniqueQuality: videoFormat[] = [];
+  private getFormatsWithUniqueQuality(formats: Format[]): Format[] {
+    const formatsWithUniqueQuality: Format[] = [];
 
     for (const format of formats) {
-      if (formatsWithUniqueQuality.some(elem => elem.qualityLabel == format.qualityLabel)) {
+      if (formatsWithUniqueQuality.some((elem) => elem.format_note == format.format_note)) {
         continue;
       }
 
@@ -62,42 +61,39 @@ export class Video {
     return formatsWithUniqueQuality;
   }
 
-  private getSizeInMb(format: videoFormat): string {
-    const { hasVideo, hasAudio, contentLength } = format;
-    const lowestAudioFormat = ytdl.chooseFormat(this.formats, { quality: 'lowestaudio' });
-
-    if (!contentLength) return 'Unknown';
-
-    if (hasVideo && !hasAudio) {
-      return `~${toMb(parseInt(contentLength) + parseInt(lowestAudioFormat.contentLength))}`;
-    } else {
-      // has only audio
-      return `~${toMb(parseInt(contentLength))}`;
-    }
-  }
-
-  private getBestFormatsForVideos(): videoFormat[] {
+  private getBestFormatsForVideos(): Format[] {
     const badItags = [394, 395, 396, 397, 398, 399, 400, 401, 402];
 
     // only video && excluding bad itags
-    const sortedFormats = this.formats.filter(format => format.hasVideo && !badItags.includes(format.itag));
+    const sortedFormats = this.formats.filter(
+      (format) =>
+        format.resolution != 'audio only' &&
+        !badItags.includes(parseInt(format.format_id)) &&
+        !['m3u8_native', 'mhtml'].includes(format.protocol) &&
+        format.video_ext != 'webm'
+    );
+
+    // const formats: Format[] = info.formats.filter(
+    //   (f) => !['m3u8_native', 'mhtml'].includes(f.protocol) && f.resolution != 'audio only'
+    // );
 
     // sorting so videos with audio have a "priority"
     // in order to not waste resourses on merge later
     // "mp4" is better than "webm"
-    // but "webm" takes less space on average than "mp4"
     sortedFormats.sort((a, b) => {
-      if (a.hasVideo && a.hasAudio) return -1;
-      else if (b.hasVideo && b.hasAudio) return 1;
+      if (a.acodec != 'none') return -1;
+      else if (b.acodec != 'none') return 1;
 
-      if (a.container == 'webm') return -1;
-      else if (b.container == 'webm') return 1;
       return 0;
     });
 
     // higher quality => higher priority
     sortedFormats.sort((a, b) => {
-      return parseInt(b.qualityLabel) - parseInt(a.qualityLabel);
+      if (a.height && b.height) {
+        return b.height - a.height;
+      }
+
+      return 0;
     });
 
     // important to get only one format of each quality to

@@ -6,6 +6,7 @@ COPY command-text-blocks.json /app/
 
 WORKDIR /app/
 
+RUN apt-get update && apt-get install -y ffmpeg
 RUN npm i --production
 
 CMD ["node", "index"]

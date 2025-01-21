@@ -1,7 +1,7 @@
 version: '1.0'
 services:
   telegram-server:
-    image: tg-server:1.0
+    image: dexagon/tg-server:1.0
     ports: 
       - 8081:8081
     environment:
@@ -11,9 +11,9 @@ services:
   bot:
     image: botdev:1.0
     volumes:
-      - E:\Projects\youtube-downloader\dist\index.js:/app/index.js
+      - ./dist/index.js:/app/index.js
     env_file:
-      - E:\Projects\youtube-downloader\.env
+      - ./.env
     depends_on:
       - telegram-server
       
