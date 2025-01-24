@@ -23,8 +23,5 @@ export default {
       },
     ],
   },
-  externals: {
-    'ffmpeg-static': 'commonjs2 ffmpeg-static'
-  },
   mode: 'development'
 };
