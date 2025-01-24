@@ -9,7 +9,7 @@ import { Video } from './Video';
 import { Downloader } from './Downloader';
 import { ChatVideoData, SimplifiedFormat, VideoInfo } from '../types/types';
 import path from 'node:path';
-import { deleteFile } from '../utils/utils';
+import { deleteFolder } from '../utils/utils';
 
 export class MyBot extends TelegramBot {
   private chats: ChatVideoData = {};
@@ -77,7 +77,7 @@ export class MyBot extends TelegramBot {
       return;
     }
 
-    const messageId = (await this.sendMessage(chatId, 'Downloading...')).message_id;
+    const messageId = (await this.sendMessage(chatId, 'Started downloading...')).message_id;
 
     const downloader = new Downloader(this.createEditMessageText(chatId, messageId));
 
@@ -101,11 +101,12 @@ export class MyBot extends TelegramBot {
     try {
       await this.sendFile(chatId, pathToFile);
     } catch (e) {
-      // console.log(e);
+      console.log(e);
       this.sendMessage(
         chatId,
         'Error occurred while sending the video. It has probably exceeded limit of 2GB. Try lowering the quality and try again'
       );
+      deleteFolder(path.parse(pathToFile).dir);
       return;
     }
 
@@ -114,7 +115,7 @@ export class MyBot extends TelegramBot {
     } catch (e) {
       console.log(e);
     } finally {
-      deleteFile(pathToFile);
+      deleteFolder(path.parse(pathToFile).dir);
       delete this.chats[chatId];
     }
   }

@@ -3,6 +3,7 @@ import { toMb } from '../utils/utils';
 import { Format, SimplifiedFormat, VideoInfo } from '../types/types';
 
 export class Video {
+  public id: string;
   public link: string;
   public title: string;
   public formats: Format[];
@@ -10,6 +11,7 @@ export class Video {
   public thumbnail: string | undefined;
 
   public constructor(link: string, info: VideoInfo, numberOfSimplifiedFormats = 10) {
+    this.id = info.id;
     this.link = link;
     this.title = sanitize(info.title);
     this.formats = info.formats;

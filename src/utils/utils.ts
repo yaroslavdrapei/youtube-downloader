@@ -14,6 +14,12 @@ export const deleteFile = (pathToFile: string): void =>
     if (err) console.log(err);
   });
 
+export const deleteFolder = (pathToFolder: string): void => {
+  fs.rm(pathToFolder, { recursive: true }, (err) => {
+    if (err) console.log(err);
+  });
+};
+
 export const generateRandomSeed = (length = 10): string => {
   let seed = '';
   for (let i = 0; i < length; i++) {
