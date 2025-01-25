@@ -1,9 +1,5 @@
 import { Video } from '../modules/Video';
 
-export type FfmpegProgressArgs = {
-  [key: string]: string;
-};
-
 export type InformUser = (info: string) => void;
 
 export type SimplifiedFormat = {
@@ -15,10 +11,6 @@ export type SimplifiedFormat = {
 
 export type ChatVideoData = {
   [key: string]: Video;
-};
-
-export type YtdlError = {
-  message: string;
 };
 
 export type Format = {
