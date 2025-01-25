@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { FfmpegProgressArgs } from '../types/types';
 
 export const toMb = (bytes: number): string => {
   return (bytes / 1024 / 1024).toFixed(2) + 'mb';
@@ -13,6 +12,12 @@ export const deleteFile = (pathToFile: string): void =>
   fs.unlink(pathToFile, (err) => {
     if (err) console.log(err);
   });
+
+export const deleteFolder = (pathToFolder: string): void => {
+  fs.rm(pathToFolder, { recursive: true }, (err) => {
+    if (err) console.log(err);
+  });
+};
 
 export const generateRandomSeed = (length = 10): string => {
   let seed = '';
@@ -33,16 +38,4 @@ export const getBuffer = async (readableStream: NodeJS.ReadStream): Promise<Buff
     readableStream.on('end', () => resolve(Buffer.concat(buffers)));
     readableStream.on('error', reject);
   });
-};
-
-export const ffmpegProcessProgressParser = (args: Buffer): FfmpegProgressArgs => {
-  const lines = args.toString().trim().split('\n');
-  const parsedArgs: FfmpegProgressArgs = {};
-
-  for (const l of lines) {
-    const [key, value] = l.split('=');
-    parsedArgs[key] = value;
-  }
-
-  return parsedArgs;
 };

@@ -1,36 +1,40 @@
-import TelegramBot, { ChatId, ConstructorOptions, InlineKeyboardButton, Message, SendPhotoOptions } from 'node-telegram-bot-api';
+import TelegramBot, {
+  ChatId,
+  ConstructorOptions,
+  InlineKeyboardButton,
+  Message,
+  SendPhotoOptions
+} from 'node-telegram-bot-api';
 import { Video } from './Video';
 import { Downloader } from './Downloader';
-import { ChatVideoData, SimplifiedFormat } from '../types/types';
-import { videoInfo } from '@distube/ytdl-core';
+import { ChatVideoData, SimplifiedFormat, VideoInfo } from '../types/types';
 import path from 'node:path';
-import { deleteFile } from '../utils/utils';
+import { deleteFolder } from '../utils/utils';
 
 export class MyBot extends TelegramBot {
   private chats: ChatVideoData = {};
   public constructor(token: string, options: ConstructorOptions) {
-    super(token, {...options});
+    super(token, { ...options });
   }
 
-  public async sendFormats(chatId: ChatId, link: string, info: videoInfo): Promise<number> {
+  public async sendFormats(chatId: ChatId, link: string, info: VideoInfo): Promise<number> {
     this.chats[chatId] = new Video(link, info);
 
     const BUTTONS_PER_ROW = 2;
 
     const formats: SimplifiedFormat[] = this.chats[chatId].simplifiedFormats;
-    const thumbnailUrl = this.chats[chatId].thumbnail?.url;
-    const buttons: InlineKeyboardButton[] = formats.map(format => {
-      const name = format.name!;
+    const thumbnailUrl = this.chats[chatId].thumbnail;
+    const buttons: InlineKeyboardButton[] = formats.map((format) => {
+      const name = format.name as string;
 
-      // deletion of name field is important because callback_data property has a capacity pf 64 bytes
       delete format.name;
 
       return { text: name, callback_data: JSON.stringify(format) };
     });
 
     const options: SendPhotoOptions = {
-      reply_markup:{
-        inline_keyboard: this.buildButtonGrid(buttons, BUTTONS_PER_ROW),
+      reply_markup: {
+        inline_keyboard: this.buildButtonGrid(buttons, BUTTONS_PER_ROW)
       },
 
       caption: this.chats[chatId].title
@@ -39,7 +43,7 @@ export class MyBot extends TelegramBot {
     if (!thumbnailUrl) {
       return (await this.sendMessage(chatId, this.chats[chatId].title, options)).message_id;
     }
-    
+
     // in case if path to thumbnail is not correct just send a title with formats
     try {
       return (await this.sendPhoto(chatId, thumbnailUrl, options)).message_id;
@@ -98,7 +102,11 @@ export class MyBot extends TelegramBot {
       await this.sendFile(chatId, pathToFile);
     } catch (e) {
       console.log(e);
-      this.sendMessage(chatId, "Error occurred while sending the video. It has probably exceeded limit of 2GB. Try lowering the quality and try again");
+      this.sendMessage(
+        chatId,
+        'Error occurred while sending the video. It has probably exceeded limit of 2GB. Try lowering the quality and try again'
+      );
+      deleteFolder(path.parse(pathToFile).dir);
       return;
     }
 
@@ -107,20 +115,20 @@ export class MyBot extends TelegramBot {
     } catch (e) {
       console.log(e);
     } finally {
-      deleteFile(pathToFile);
+      deleteFolder(path.parse(pathToFile).dir);
       delete this.chats[chatId];
     }
   }
 
   public setCommand(command: string, message: string): void {
-    this.onText(('/' + command) as unknown as RegExp, msg => {
+    this.onText(('/' + command) as unknown as RegExp, (msg) => {
       const chatId = msg.chat.id;
 
       this.sendMessage(chatId, message);
     });
   }
 
-  private buildButtonGrid = (buttons: InlineKeyboardButton[], buttonsPerRow=1): InlineKeyboardButton[][] => {
+  private buildButtonGrid = (buttons: InlineKeyboardButton[], buttonsPerRow = 1): InlineKeyboardButton[][] => {
     const buttonsMarkup: InlineKeyboardButton[][] = [[]];
 
     buttons.forEach((btn, i) => {
@@ -134,14 +142,14 @@ export class MyBot extends TelegramBot {
     return buttonsMarkup;
   };
 
-  private createEditMessageText = (chatId: ChatId, messageId: number): (message: string) => Promise<boolean | Message> => {
-    const resultFunc = (message: string) : Promise<boolean | Message> => {
-      return this.editMessageText(
-        message,
-        { chat_id: chatId, message_id: messageId }
-      );
+  private createEditMessageText = (
+    chatId: ChatId,
+    messageId: number
+  ): ((message: string) => Promise<boolean | Message>) => {
+    const resultFunc = (message: string): Promise<boolean | Message> => {
+      return this.editMessageText(message, { chat_id: chatId, message_id: messageId });
     };
 
     return resultFunc;
   };
-};
+}
